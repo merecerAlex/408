@@ -1,0 +1,1237 @@
+/* =========================================================
+   408 随身背诵 · style.css
+   Mobile-First：先写 375px 手机布局，再用 @media (min-width:…) 增强桌面端
+   规范：触控目标 ≥ 44px；无横向滚动；安全区 env(safe-area-inset-*)；
+        深色 / 浅色双主题（户外可读优先，默认浅色高对比）
+   ========================================================= */
+
+/* ---------- 1. 设计令牌（颜色 / 尺寸） ---------- */
+:root {
+  /* 浅色主题：白底 + 深字，户外强光下可读 */
+  --bg: #f2f5f9;
+  --bg-elev: #ffffff;
+  --bg-sunken: #e9eef5;
+  --text: #12212f;
+  --text-2: #46586b;
+  --text-3: #6b7c8f;
+  --border: #d5dfea;
+  --border-strong: #b9c8d8;
+
+  --brand: #1f6feb;
+  --brand-ink: #ffffff;
+  --accent: #f0672b;
+
+  /* 三级标签配色（列表、卡片、筛选 chip 共用） */
+  --l1-bg: #fde7e6;
+  --l1-fg: #b81f1a;
+  --l1-line: #e8544d;
+  --l2-bg: #e3eefc;
+  --l2-fg: #14509c;
+  --l2-line: #2f7be4;
+  --l3-bg: #e8ecf1;
+  --l3-fg: #4b5a69;
+  --l3-line: #8e9dac;
+
+  --hl-bg: #ffe86b;
+  --hl-fg: #3a2b00;
+  --shadow-1: 0 1px 2px rgba(18, 33, 47, .08), 0 2px 8px rgba(18, 33, 47, .06);
+  --shadow-2: 0 6px 24px rgba(18, 33, 47, .16);
+
+  /* 触控与文本尺寸 */
+  --touch: 44px;
+  --tap: 44px;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --topbar-h: 0px; /* JS 实测顶部栏高度写入，用于锚点偏移 */
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Cascadia Mono", monospace;
+
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+
+  /* 三档自评配色：底色不透明 + 文字高对比，保证任何主题下都 ≥4.5:1 */
+  --rate-known-bg: #e3f6ec;
+  --rate-known-fg: #14603f;
+  --rate-known-line: #2f9e6b;
+  --rate-fuzzy-bg: #fdf1d8;
+  --rate-fuzzy-fg: #7a4c06;
+  --rate-fuzzy-line: #d08a1e;
+  --rate-unknown-bg: #fbe4e3;
+  --rate-unknown-fg: #9b1c17;
+  --rate-unknown-line: #d84a43;
+
+  color-scheme: light;
+}
+
+/* 深色主题：夜间 / 省电 */
+html[data-theme="dark"] {
+  --bg: #0e141b;
+  --bg-elev: #17202b;
+  --bg-sunken: #101821;
+  --text: #e8eef6;
+  --text-2: #b3c1d1;
+  --text-3: #8b9aab;
+  --border: #26333f;
+  --border-strong: #36475a;
+
+  --brand: #4d9bff;
+  --brand-ink: #07121f;
+  --accent: #ff8a4c;
+
+  --l1-bg: #4a1b1b;
+  --l1-fg: #ffb3ae;
+  --l1-line: #ff6b63;
+  --l2-bg: #14304f;
+  --l2-fg: #a9cdfd;
+  --l2-line: #5aa2f5;
+  --l3-bg: #26313d;
+  --l3-fg: #c2ccd7;
+  --l3-line: #8e9dac;
+
+  --hl-bg: #ffd24a;
+  --hl-fg: #201800;
+  /* 暗色主题下三档自评：深底 + 亮字，实测 ≥7:1 */
+  --rate-known-bg: #0f3527;
+  --rate-known-fg: #8ff0bf;
+  --rate-known-line: #2f9e6b;
+  --rate-fuzzy-bg: #3a2a0c;
+  --rate-fuzzy-fg: #ffd28a;
+  --rate-fuzzy-line: #d08a1e;
+  --rate-unknown-bg: #40191a;
+  --rate-unknown-fg: #ffb0aa;
+  --rate-unknown-line: #ff6b63;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, .5);
+  --shadow-2: 0 8px 28px rgba(0, 0, 0, .6);
+  color-scheme: dark;
+}
+
+/* ---------- 2. 基础重置 ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--topbar-h) + 8px);
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.6;
+  /* 防止任何元素撑出横向滚动 */
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: contain;
+}
+
+h1, h2, h3, p, ul, ol { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+button { font: inherit; color: inherit; }
+code { font-family: var(--mono); font-size: .92em; }
+
+/* 焦点可见性（键盘用户） */
+:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+.skip-link {
+  position: absolute; left: 8px; top: -60px; z-index: 100;
+  padding: 12px 16px; border-radius: var(--radius-sm);
+  background: var(--brand); color: var(--brand-ink); text-decoration: none;
+  transition: top .15s ease;
+}
+.skip-link:focus { top: calc(var(--safe-t) + 8px); }
+
+/* ---------- 3. 顶部栏（sticky） ---------- */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: calc(var(--safe-t) + 6px) calc(var(--safe-r) + 10px) 8px calc(var(--safe-l) + 10px);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+/* 不支持 color-mix 的旧浏览器回退为不透明背景 */
+@supports not (background: color-mix(in srgb, red 50%, blue)) {
+  .topbar { background: var(--bg); }
+}
+
+.topbar__row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: var(--touch);
+}
+
+/* 通用图标按钮：始终 ≥ 44×44 */
+.icon-btn {
+  flex: 0 0 auto;
+  width: var(--tap);
+  height: var(--tap);
+  min-width: var(--tap);
+  min-height: var(--tap);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color .15s ease;
+}
+.icon-btn:active { background: var(--bg-sunken); }
+
+/* 汉堡图标（三条线） */
+.hamburger,
+.hamburger::before,
+.hamburger::after {
+  display: block;
+  width: 20px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--text);
+  content: "";
+  position: relative;
+}
+.hamburger::before { position: absolute; top: -6px; }
+.hamburger::after  { position: absolute; top: 6px; }
+
+.brand {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  overflow: hidden;
+}
+.brand__title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  white-space: nowrap;
+}
+.brand__sub {
+  font-size: 12px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 搜索框 */
+.searchbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-top: 6px;
+  background: var(--bg-elev);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 12px;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.searchbar:focus-within {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 22%, transparent);
+}
+.searchbar__icon {
+  padding: 0 4px 0 12px;
+  font-size: 15px;
+  opacity: .75;
+}
+.searchbar__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: var(--touch);
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 16px; /* ≥16px 防止 iOS 聚焦时自动缩放 */
+  outline: none;
+}
+.searchbar__input::placeholder { color: var(--text-3); }
+.searchbar__input::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+.searchbar__clear {
+  flex: 0 0 auto;
+  width: var(--tap);
+  height: var(--tap);
+  border: 0;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 17px;
+  cursor: pointer;
+}
+
+/* 分级筛选 + 视图切换 */
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+.chips::-webkit-scrollbar { display: none; }
+
+.chip {
+  flex: 0 0 auto;
+  /* 触控目标 ≥ 44px（iOS HIG / 任务单硬性要求） */
+  min-height: var(--tap);
+  padding: 8px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-elev);
+  color: var(--text-2);
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+.chip.is-active { color: var(--text); border-color: var(--text); }
+.chip--all.is-active { background: var(--text); color: var(--bg); border-color: var(--text); }
+.chip--l1.is-active { background: var(--l1-bg); color: var(--l1-fg); border-color: var(--l1-line); }
+.chip--l2.is-active { background: var(--l2-bg); color: var(--l2-fg); border-color: var(--l2-line); }
+.chip--l3.is-active { background: var(--l3-bg); color: var(--l3-fg); border-color: var(--l3-line); }
+
+.viewtabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-sunken);
+  border-radius: 12px;
+}
+.viewtab {
+  min-height: var(--touch);
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+.viewtab.is-active {
+  background: var(--bg-elev);
+  color: var(--text);
+  box-shadow: var(--shadow-1);
+}
+
+/* ---------- 4. 主区域 ---------- */
+.main {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 12px calc(var(--safe-r) + 12px) calc(var(--safe-b) + 32px) calc(var(--safe-l) + 12px);
+}
+
+/* 加载 / 错误状态 */
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 48px 16px;
+  color: var(--text-2);
+  text-align: center;
+}
+.state__title { font-size: 17px; font-weight: 700; color: var(--text); }
+.state__hint { font-size: 13.5px; color: var(--text-3); max-width: 34em; }
+.state--error code {
+  background: var(--bg-sunken);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+
+.spinner {
+  width: 30px; height: 30px;
+  border: 3px solid var(--border);
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+}
+
+/* ---------- 5. 考点列表 ---------- */
+.listhead { margin-bottom: 8px; }
+.listhead__meta {
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+/* 章 / 节 折叠面板 */
+.panel {
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  overflow: hidden;
+}
+
+.panel__toggle {
+  display: flex;
+  align-items: center;
+  /* 章名 + 考向徽章 + 计数在 375px 下会超行 → 允许换行，计数用 margin-left:auto 保持靠右 */
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  min-height: calc(var(--touch) + 4px);
+  padding: 10px 14px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.panel__toggle:active { background: var(--bg-sunken); }
+
+.panel__caret {
+  flex: 0 0 auto;
+  width: 16px;
+  color: var(--text-3);
+  font-size: 12px;
+  transition: transform .2s ease;
+}
+.panel__toggle[aria-expanded="true"] .panel__caret { transform: rotate(90deg); }
+
+.panel__name { flex: 1 1 auto; min-width: 0; }
+.panel__count {
+  flex: 0 0 auto;
+  margin-left: auto;   /* 换行后依然贴右 */
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+  background: var(--bg-sunken);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.panel__items {
+  border-top: 1px solid var(--border);
+}
+.panel__items[hidden] { display: none; }
+
+/* 二级：节标题 */
+.sec__label {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 7px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  color: var(--text-3);
+  background: var(--bg-sunken);
+}
+
+/* 考点行 */
+.topic {
+  display: block;
+  border-top: 1px solid var(--border);
+  scroll-margin-top: calc(var(--topbar-h) + 60px);
+}
+.sec__label + .topic { border-top: 0; }
+
+.topic__head {
+  display: flex;
+  align-items: stretch;
+}
+.topic__jump {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 11px 8px 11px 14px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.topic__jump:active { background: var(--bg-sunken); }
+.topic__title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.topic__path {
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+
+/* 右侧「背诵」快捷按钮 */
+.topic__drill {
+  flex: 0 0 auto;
+  width: var(--tap);
+  margin: 4px 4px 4px 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-3);
+  font-size: 17px;
+  cursor: pointer;
+}
+.topic__drill:active { background: var(--bg-sunken); }
+
+/* 列表内展开的答案 */
+.topic__answer {
+  padding: 0 14px 14px;
+  font-size: 14.5px;
+  color: var(--text-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border-left: 3px solid var(--border);
+  margin: 0 14px 12px;
+  padding-left: 10px;
+}
+.topic.is-open > .topic__answer { display: block; }
+.topic__source {
+  display: block;
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+.topic.is-open .topic__jump { background: var(--bg-sunken); }
+
+/* 搜索命中高亮 */
+mark.hl {
+  background: var(--hl-bg);
+  color: var(--hl-fg);
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+/* 空结果提示 */
+.empty {
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--text-2);
+}
+.empty__title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.empty__hint { font-size: 13.5px; color: var(--text-3); }
+.empty__q {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0 2px;
+  padding: 0 6px;
+  border-radius: 5px;
+  background: var(--bg-sunken);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- 6. 分级标签 ---------- */
+.lvl {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.lvl--l1 { background: var(--l1-bg); color: var(--l1-fg); border-color: var(--l1-line); }
+.lvl--l2 { background: var(--l2-bg); color: var(--l2-fg); border-color: var(--l2-line); }
+.lvl--l3 { background: var(--l3-bg); color: var(--l3-fg); border-color: var(--l3-line); }
+
+/* 列表行左侧色条：一眼看出分级 */
+.topic--l1 { box-shadow: inset 3px 0 0 var(--l1-line); }
+.topic--l2 { box-shadow: inset 3px 0 0 var(--l2-line); }
+.topic--l3 { box-shadow: inset 3px 0 0 var(--l3-line); }
+.topic.is-open.topic--l1 > .topic__answer { border-left-color: var(--l1-line); }
+.topic.is-open.topic--l2 > .topic__answer { border-left-color: var(--l2-line); }
+.topic.is-open.topic--l3 > .topic__answer { border-left-color: var(--l3-line); }
+
+/* ---------- 7. 抽卡背诵 ---------- */
+.cardfilter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.cardfilter__label {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-3);
+}
+.select {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--touch);
+  padding: 8px 10px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--bg-elev);
+  color: var(--text);
+  font-size: 15px;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-3) 50%),
+                    linear-gradient(135deg, var(--text-3) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 34px;
+  cursor: pointer;
+}
+
+.cardmeta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--text-3);
+}
+.cardmeta__pos { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.cardmeta__scope {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* 3D 舞台 */
+.cardstage {
+  perspective: 1400px;
+}
+.flipcard {
+  position: relative;
+  width: 100%;
+  /* 手机高度自适应，保底可用 */
+  height: clamp(340px, 56vh, 520px);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: height .2s ease;
+}
+.flipcard__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform .55s cubic-bezier(.2, .7, .2, 1);
+}
+/* 翻转：由 JS 切换 is-flipped */
+.flipcard.is-flipped .flipcard__inner { transform: rotateY(180deg); }
+
+.flipcard__face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--bg-elev);
+  box-shadow: var(--shadow-1);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+}
+.flipcard__face--back {
+  transform: rotateY(180deg);
+  /* 背面底色略作区分，深色下依然高对比 */
+  background: color-mix(in srgb, var(--bg-elev) 94%, var(--brand));
+}
+@supports not (background: color-mix(in srgb, red 50%, blue)) {
+  .flipcard__face--back { background: var(--bg-elev); }
+}
+
+.flipcard__badges {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.flipcard__badge {
+  font-size: 11.5px;
+  color: var(--text-2);
+  background: var(--bg-sunken);
+  border-radius: 999px;
+  padding: 2px 9px;
+  overflow-wrap: anywhere;
+}
+.flipcard__badge--draft {
+  color: var(--accent);
+  border: 1px dashed var(--accent);
+  background: transparent;
+}
+
+.flipcard__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  /* 正面标题过长时允许滚动 */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.flipcard__body--scroll { justify-content: flex-start; }
+
+.flipcard__prompt {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text-3);
+}
+.flipcard__title {
+  font-size: clamp(19px, 5.4vw, 26px);
+  line-height: 1.4;
+  font-weight: 800;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.flipcard__title--small {
+  font-size: clamp(15px, 4vw, 18px);
+  font-weight: 700;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--border-strong);
+}
+
+.flipcard__kw {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.flipcard__kw li {
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--bg-sunken);
+  color: var(--text-2);
+}
+
+.flipcard__answer {
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+/* 答案里的 **重点** 由 app.js 的 richText() 转成 <strong> */
+.flipcard__answer strong {
+  font-weight: 800;
+  color: var(--text);
+  background: linear-gradient(transparent 62%, var(--hl-bg) 62%, var(--hl-bg) 92%, transparent 92%);
+}
+.flipcard__source {
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+
+.flipcard__hint {
+  flex: 0 0 auto;
+  padding-top: 8px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+/* 卡面切换时的轻微抬起反馈 */
+.flipcard:active .flipcard__inner { transform: scale(.995); }
+.flipcard.is-flipped:active .flipcard__inner { transform: rotateY(180deg) scale(.995); }
+
+@media (prefers-reduced-motion: reduce) {
+  .flipcard__inner { transition: none; }
+}
+
+/* 低端设备降级：不用 3D 旋转，改为淡入淡出（由 app.js 视设备性能加 .no-flip） */
+html.no-flip .flipcard { perspective: none; }
+html.no-flip .flipcard__inner { transform: none !important; transform-style: flat; }
+html.no-flip .flipcard__face {
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
+  transition: opacity .2s ease;
+}
+html.no-flip .flipcard__face--back { transform: none; opacity: 0; }
+html.no-flip .flipcard.is-flipped .flipcard__face--front { opacity: 0; }
+html.no-flip .flipcard.is-flipped .flipcard__face--back { opacity: 1; }
+html.no-flip .flipcard:active .flipcard__inner,
+html.no-flip .flipcard.is-flipped:active .flipcard__inner { transform: none !important; }
+
+/* 抽卡按钮区 */
+.cardctl {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cardctl__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.btn {
+  min-height: var(--touch);
+  min-width: var(--tap);
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--bg-elev);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease, transform .08s ease;
+  touch-action: manipulation;
+}
+.btn:active { transform: translateY(1px); }
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: .45;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn--primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--brand-ink);
+}
+.btn--accent {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+html[data-theme="dark"] .btn--accent { color: #1a0d05; }
+.btn--ghost { background: var(--bg-elev); }
+.btn--block { width: 100%; }
+
+/* ---------- 8. 抽屉目录 ---------- */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(6, 12, 20, .48);
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+.scrim.is-shown { opacity: 1; }
+
+.drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  width: min(86vw, 360px);
+  height: 100dvh;
+  padding-top: var(--safe-t);
+  background: var(--bg-elev);
+  border-right: 1px solid var(--border);
+  box-shadow: var(--shadow-2);
+  transform: translateX(-102%);
+  transition: transform .28s cubic-bezier(.2, .7, .2, 1);
+  visibility: hidden;
+}
+.drawer.is-open { transform: translateX(0); visibility: visible; }
+
+.drawer__head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 8px 8px calc(var(--safe-l) + 14px);
+  border-bottom: 1px solid var(--border);
+}
+.drawer__title {
+  font-size: 15px;
+  font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer__body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px calc(var(--safe-r) + 8px) 12px calc(var(--safe-l) + 8px);
+  overscroll-behavior: contain;
+}
+
+.drawer__foot {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 8px calc(var(--safe-r) + 10px) calc(var(--safe-b) + 10px) calc(var(--safe-l) + 10px);
+  border-top: 1px solid var(--border);
+}
+.drawer__foot .btn { font-size: 14px; padding: 8px 10px; }
+
+/* 抽屉内三级树 */
+.tree__group { margin-bottom: 2px; }
+
+.tree__chapter,
+.tree__section {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;      /* 节名 + 考向徽章 + 掌握度 可能超行 */
+  gap: 6px;
+  width: 100%;
+  min-height: var(--touch);
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+}
+.tree__chapter {
+  font-size: 14.5px;
+  font-weight: 700;
+}
+.tree__section {
+  padding-left: 22px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.tree__chapter:active,
+.tree__section:active,
+.tree__topic:active { background: var(--bg-sunken); }
+
+.tree__caret {
+  flex: 0 0 auto;
+  width: 14px;
+  font-size: 11px;
+  color: var(--text-3);
+  transition: transform .2s ease;
+}
+.tree__chapter[aria-expanded="true"] > .tree__caret,
+.tree__section[aria-expanded="true"] > .tree__caret { transform: rotate(90deg); }
+
+.tree__name { flex: 1 1 auto; min-width: 0; }
+
+.tree__children { overflow: hidden; }
+.tree__children[hidden] { display: none; }
+
+.tree__topics { padding-left: 12px; }
+
+.tree__topic {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: var(--touch);
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-2);
+  font-size: 13.5px;
+  line-height: 1.4;
+}
+.tree__topic .lvl {
+  flex: 0 0 auto;
+  padding: 0 6px;
+  font-size: 10.5px;
+  border-radius: 6px;
+}
+.tree__topic-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+}
+.tree__topic:hover,
+.tree__topic.is-current { background: var(--bg-sunken); color: var(--text); }
+
+/* ---------- 9. 页脚 ---------- */
+.footer {
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--text-3);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- 10. 平板 / 桌面增强（Mobile-First 之上叠加） ---------- */
+@media (min-width: 768px) {
+  .brand__title { font-size: 19px; }
+  .toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .chips { flex: 1 1 auto; flex-wrap: wrap; overflow: visible; }
+  .viewtabs { flex: 0 0 auto; width: 280px; }
+
+  .main {
+    max-width: 860px;
+    padding-top: 20px;
+    padding-bottom: 48px;
+  }
+
+  /* 桌面端卡片不拉伸变形：限宽居中 */
+  #view-card { max-width: 620px; margin: 0 auto; }
+  .flipcard { height: clamp(360px, 50vh, 480px); }
+  .flipcard__title { font-size: 26px; }
+  .flipcard__answer { font-size: 15.5px; }
+  .flipcard__face { padding: 20px; }
+
+  .cardctl__row { grid-template-columns: 1fr 1.4fr 1fr; }
+}
+
+@media (min-width: 1100px) {
+  .main { max-width: 960px; }
+  .chip { min-height: 34px; }
+}
+
+/* 横屏矮屏：卡片降低高度 */
+@media (max-height: 480px) and (orientation: landscape) {
+  .flipcard { height: 300px; }
+  .topbar__row { min-height: 40px; }
+}
+
+/* 打印：去掉交互 chrome，便于导出纸质背诵单 */
+@media print {
+  .topbar, .drawer, .scrim, .cardctl, .viewtabs, .chips, .skip-link { display: none !important; }
+  body { background: #fff; color: #000; }
+  .panel, .flipcard__face { box-shadow: none; border-color: #999; }
+}
+
+/* =========================================================
+   背诵记忆系统（会了 / 模糊 / 忘了 + 轮次 + 结算）
+   ========================================================= */
+.drill {
+  margin: 14px 0 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  box-shadow: var(--shadow-1);
+}
+.drill__hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.drill__round {
+  font-weight: 700;
+  color: var(--brand);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--brand) 12%, transparent);
+}
+.drill__stat { font-variant-numeric: tabular-nums; }
+.drill__rate {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+.ratebtn {
+  min-height: var(--tap);
+  padding: 10px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-sunken);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .12s ease, filter .12s ease;
+}
+.ratebtn:active { transform: scale(.97); }
+/* 三档配色：底色走不透明色，文字用高对比色，保证暗色主题也 ≥4.5:1 */
+.ratebtn--known {
+  border-color: var(--rate-known-line);
+  background: var(--rate-known-bg);
+  color: var(--rate-known-fg);
+}
+.ratebtn--fuzzy {
+  border-color: var(--rate-fuzzy-line);
+  background: var(--rate-fuzzy-bg);
+  color: var(--rate-fuzzy-fg);
+}
+.ratebtn--unknown {
+  border-color: var(--rate-unknown-line);
+  background: var(--rate-unknown-bg);
+  color: var(--rate-unknown-fg);
+}
+.ratebtn:disabled { opacity: .45; cursor: not-allowed; }
+.drill__tip {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--text-3);
+  text-align: center;
+}
+
+/* 结算面板 */
+.settle {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(8, 14, 20, .55);
+  backdrop-filter: blur(2px);
+}
+.settle[hidden] { display: none; }
+.settle__box {
+  width: min(420px, 100%);
+  padding: 20px 18px;
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  box-shadow: var(--shadow-2);
+  border: 1px solid var(--border);
+}
+.settle__title { margin: 0 0 10px; font-size: 18px; color: var(--text); }
+.settle__line { margin: 0 0 6px; font-size: 14px; color: var(--text-2); line-height: 1.7; }
+.settle__hint { margin: 0 0 14px; font-size: 12px; color: var(--text-3); }
+.settle__actions { display: grid; gap: 8px; }
+
+/* 抽屉：掌握进度与导入导出 */
+.drawer__progress {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--text-2);
+  text-align: center;
+}
+.drawer__io { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+
+/* 列表 / 抽屉里的掌握标记 */
+.mastery {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--bg-sunken);
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.mastery--full { background: rgba(67, 181, 129, .18); color: #2f7d5b; }
+
+/* 单文件版（file://）提示条 */
+[data-standalone="true"] .drill__tip::after {
+  content: " · 单文件版与网页版的学习记录互不相通";
+  color: var(--text-3);
+}
+
+/* ---------- 11. 章节考向与分值徽章（exam_trend.json，可选） ----------
+   数据是**区间估计**，不是官方分值：文案只显示 weight + scoreRange，
+   详细说明（years / focus / 依据）放在 title 里，长按或悬停可见。
+   没有 trend 数据时这些元素根本不会出现在 DOM 里。 */
+.trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  max-width: 100%;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-sunken);
+  color: var(--text-2);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: help;   /* 提示可以长按看说明 */
+}
+.trend__dot { opacity: .5; font-weight: 400; }
+.trend__s {
+  font-weight: 500;
+  color: var(--text-3);
+  /* 分值文本可能较长：手机上允许滚动外部截断，但不撑破布局 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 手机窄屏（<560px）：列表里的章徽章只留「🔥 高频」，
+   完整分值区间收进 title（长按/悬停可见），避免被截成省略号 */
+@media (max-width: 559px) {
+  .panel__toggle .trend .trend__s,
+  .panel__toggle .trend .trend__dot { display: none; }
+  .panel__toggle .trend { padding: 1px 7px; }
+}
+
+/* 频率档位配色：只用边框/底色区隔，正文颜色始终保持高对比 */
+.trend--high { border-color: #e8544d; background: rgba(232, 84, 77, .12); color: #b81f1a; }
+.trend--mid  { border-color: #e2a03f; background: rgba(226, 160, 63, .14); color: #8a5a10; }
+.trend--low  { border-color: var(--border-strong); background: var(--bg-sunken); color: var(--text-3); }
+
+html[data-theme="dark"] .trend--high { color: #ffb3ae; border-color: #ff6b63; background: rgba(255, 107, 99, .16); }
+html[data-theme="dark"] .trend--mid  { color: #ffd69a; border-color: #e2a03f; background: rgba(226, 160, 63, .18); }
+html[data-theme="dark"] .trend--low  { color: #c2ccd7; }
+
+/* 卡片上的紧凑版：一行放不下时由 .flipcard__badges 的 flex-wrap 折行 */
+.trend--compact { font-size: 11px; padding: 1px 7px; }
+.trend--compact .trend__s { display: none; }   /* 卡片正面只留「🔥高频」，细节长按看 title */
+@media (min-width: 480px) {
+  .trend--compact .trend__s { display: inline; }
+}
+
+/* 抽屉里的节徽章更小，避免把节名挤没 */
+.tree__section .trend { font-size: 10.5px; padding: 1px 6px; margin-left: auto; }
+.tree__section .trend .trend__s { display: none; }
+
+/* 打印时不需要徽章 */
+@media print {
+  .trend { display: none !important; }
+}

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <!-- 手机优先：视口 + 刘海屏安全区 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>408 随身背诵 · 操作系统</title>
+  <meta name="description" content="408 操作系统考点随身背诵：抽屉目录 + 全局搜索 + 三级标签 + 抽卡翻转。">
+  <meta name="theme-color" content="#f6f8fb">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="408背诵">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 无障碍：跳转到主内容 -->
+  <a class="skip-link" href="#main">跳到主内容</a>
+
+  <!-- ===== 顶部栏（sticky，滚动时保持可见） ===== -->
+  <header class="topbar" id="topbar">
+    <div class="topbar__row">
+      <button class="icon-btn" id="btn-menu" type="button"
+              aria-label="打开目录" aria-controls="drawer" aria-expanded="false">
+        <span class="hamburger" aria-hidden="true"></span>
+      </button>
+      <h1 class="brand">
+        <span class="brand__title">408 随身背诵</span>
+        <span class="brand__sub" id="brand-sub"></span>
+      </h1>
+      <button class="icon-btn" id="btn-theme" type="button" aria-label="切换深色/浅色主题">
+        <span id="theme-icon" aria-hidden="true">🌙</span>
+      </button>
+    </div>
+
+    <!-- 全局搜索 -->
+    <div class="searchbar" role="search">
+      <span class="searchbar__icon" aria-hidden="true">🔍</span>
+      <input id="search" class="searchbar__input" type="search" inputmode="search"
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+             placeholder="搜索考点，如「死锁」「PV」"
+             aria-label="搜索考点" aria-controls="list">
+      <button class="searchbar__clear" id="btn-clear" type="button" aria-label="清空搜索" hidden>✕</button>
+    </div>
+
+    <!-- 分级标签筛选 + 视图切换 -->
+    <div class="toolbar">
+      <div class="chips" id="level-chips" role="group" aria-label="按分级标签筛选">
+        <button class="chip chip--all is-active" type="button" data-level="all">全部</button>
+        <button class="chip chip--l1" type="button" data-level="l1">🔴 必背原话</button>
+        <button class="chip chip--l2" type="button" data-level="l2">🔵 核心理解</button>
+        <button class="chip chip--l3" type="button" data-level="l3">⚪ 拓展了解</button>
+      </div>
+      <div class="viewtabs" role="tablist" aria-label="视图切换">
+        <button class="viewtab is-active" type="button" role="tab" id="tab-list"
+                aria-selected="true" aria-controls="view-list" data-view="list">📚 考点列表</button>
+        <button class="viewtab" type="button" role="tab" id="tab-card"
+                aria-selected="false" aria-controls="view-card" data-view="card">🎴 抽卡背诵</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== 主区域 ===== -->
+  <main class="main" id="main">
+    <!-- 开屏骨架屏：首次进入先显示 2 秒，避免白屏闪烁（只有形状，不含任何知识正文） -->
+    <div class="skeleton" id="skeleton" role="status" aria-label="正在加载考点">
+      <div class="sk-panel">
+        <div class="sk-bar sk-bar--title"></div>
+        <div class="sk-row"><div class="sk-bar sk-bar--dot"></div><div class="sk-bar sk-bar--line"></div></div>
+        <div class="sk-row"><div class="sk-bar sk-bar--dot"></div><div class="sk-bar sk-bar--line sk-bar--short"></div></div>
+        <div class="sk-row"><div class="sk-bar sk-bar--dot"></div><div class="sk-bar sk-bar--line"></div></div>
+      </div>
+      <div class="sk-panel">
+        <div class="sk-bar sk-bar--title"></div>
+        <div class="sk-row"><div class="sk-bar sk-bar--dot"></div><div class="sk-bar sk-bar--line"></div></div>
+        <div class="sk-row"><div class="sk-bar sk-bar--dot"></div><div class="sk-bar sk-bar--line sk-bar--short"></div></div>
+      </div>
+      <p class="skeleton__hint">正在读取知识点数据…</p>
+    </div>
+
+    <!-- 出错状态：标题固定，「真实原因」由 JS 写进 #state-error-msg -->
+    <div class="state state--error" id="state-error" hidden role="alert">
+      <p class="state__title" id="state-error-title">😵 数据加载失败</p>
+      <p class="state__hint state__hint--strong" id="state-error-msg"></p>
+      <p class="state__hint state__hint--minor" id="state-error-help"></p>
+      <div class="state__actions">
+        <button class="btn btn--primary" type="button" id="btn-retry">重新加载</button>
+      </div>
+    </div>
+
+    <!-- 考点列表视图 -->
+    <section class="view" id="view-list" role="tabpanel" aria-labelledby="tab-list">
+      <div class="listhead">
+        <p class="listhead__meta" id="list-meta"></p>
+      </div>
+      <div id="list"></div>
+    </section>
+
+    <!-- 抽卡背诵视图 -->
+    <section class="view" id="view-card" role="tabpanel" aria-labelledby="tab-card" hidden>
+      <!-- 抽背范围筛选 -->
+      <div class="cardfilter">
+        <label class="cardfilter__label" for="card-chapter">抽背范围</label>
+        <select id="card-chapter" class="select">
+          <option value="all">全部章节</option>
+        </select>
+      </div>
+
+      <p class="cardmeta">
+        <span id="card-pos" class="cardmeta__pos">- / -</span>
+        <span id="card-scope" class="cardmeta__scope"></span>
+      </p>
+
+      <!-- 卡片：正面标题，背面答案（CSS 3D 翻转） -->
+      <div class="cardstage">
+        <div class="flipcard" id="flipcard" role="button" tabindex="0"
+             aria-label="背诵卡片，点击翻转查看答案" aria-pressed="false">
+          <div class="flipcard__inner">
+            <div class="flipcard__face flipcard__face--front">
+              <div class="flipcard__badges" id="card-badges-front"></div>
+              <div class="flipcard__body">
+                <p class="flipcard__prompt">考点</p>
+                <h2 class="flipcard__title" id="card-title-front"></h2>
+                <ul class="flipcard__kw" id="card-kw-front"></ul>
+              </div>
+              <p class="flipcard__hint">轻触卡片查看答案</p>
+            </div>
+            <div class="flipcard__face flipcard__face--back">
+              <div class="flipcard__badges" id="card-badges-back"></div>
+              <div class="flipcard__body flipcard__body--scroll">
+                <h3 class="flipcard__title flipcard__title--small" id="card-title-back"></h3>
+                <div class="flipcard__answer" id="card-answer"></div>
+                <p class="flipcard__source" id="card-source"></p>
+              </div>
+              <p class="flipcard__hint">轻触卡片返回正面</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 抽卡操作：上一张 / 显示答案 / 下一张 + 随机 -->
+      <div class="cardctl">
+        <div class="cardctl__row">
+          <button class="btn btn--ghost" type="button" id="btn-prev">‹ 上一张</button>
+          <button class="btn btn--primary" type="button" id="btn-flip">显示答案</button>
+          <button class="btn btn--ghost" type="button" id="btn-next">下一张 ›</button>
+        </div>
+        <button class="btn btn--accent btn--block" type="button" id="btn-random">🎲 随机抽一张</button>
+      </div>
+
+      <!-- ===== 背诵记忆：轮次进度 + 三档自评 ===== -->
+      <section class="drill" id="drill" aria-label="背诵进度与自评">
+        <div class="drill__hud">
+          <span class="drill__round" id="drill-round">第 1 轮</span>
+          <span class="drill__stat" id="drill-stat">已过 0 / 0</span>
+        </div>
+        <div class="drill__rate" id="drill-rate" hidden>
+          <button class="ratebtn ratebtn--known" type="button" data-grade="known">✅ 会了</button>
+          <button class="ratebtn ratebtn--fuzzy" type="button" data-grade="fuzzy">🤔 模糊</button>
+          <button class="ratebtn ratebtn--unknown" type="button" data-grade="unknown">❌ 忘了</button>
+        </div>
+        <p class="drill__tip" id="drill-tip">先点「显示答案」，看完再自评：会了 / 模糊 / 忘了</p>
+      </section>
+
+      <!-- ===== 一轮结束的结算面板 ===== -->
+      <div class="settle" id="settle" hidden>
+        <div class="settle__box" role="dialog" aria-modal="true" aria-labelledby="settle-title">
+          <h3 class="settle__title" id="settle-title">第 <span id="settle-roundno">1</span> 轮完成 🎉</h3>
+          <p class="settle__line" id="settle-line"></p>
+          <p class="settle__hint" id="settle-hint"></p>
+          <div class="settle__actions">
+            <button class="btn btn--primary btn--block" type="button" id="btn-settle-again">只刷没掌握的 · 再来一轮</button>
+            <button class="btn btn--ghost btn--block" type="button" id="btn-settle-all">全部重来</button>
+            <button class="btn btn--ghost btn--block" type="button" id="btn-settle-close">先歇一会儿</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <p class="footer" id="footer"></p>
+  </main>
+
+  <!-- ===== 抽屉目录：章 → 节 → 考点 ===== -->
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="drawer" aria-label="目录" aria-hidden="true">
+    <div class="drawer__head">
+      <p class="drawer__title">目录 · 王道操作系统</p>
+      <button class="icon-btn" type="button" id="btn-drawer-close" aria-label="关闭目录">✕</button>
+    </div>
+    <div class="drawer__body" id="drawer-body"></div>
+    <div class="drawer__foot">
+      <p class="drawer__progress" id="drawer-progress"></p>
+      <button class="btn btn--ghost btn--block" type="button" id="btn-expand-all">全部展开</button>
+      <button class="btn btn--ghost btn--block" type="button" id="btn-collapse-all">全部折叠</button>
+      <div class="drawer__io">
+        <button class="btn btn--ghost" type="button" id="btn-export">⬇️ 导出记录</button>
+        <button class="btn btn--ghost" type="button" id="btn-import">⬆️ 导入记录</button>
+      </div>
+      <input type="file" id="file-import" accept="application/json,.json" hidden>
+    </div>
+  </aside>
+
+  <!-- 实时播报（搜索/翻卡结果，供读屏器播报） -->
+  <div class="sr-only" id="live" aria-live="polite"></div>
+
+  <noscript>
+    <p style="padding:16px">本页面需要启用 JavaScript 才能渲染考点数据。</p>
+  </noscript>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

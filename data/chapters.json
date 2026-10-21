@@ -1,0 +1,57 @@
+{
+  "$schema": "408-os-node / 408 随身背诵 目录树 v1",
+  "version": "0.1.0-mvp",
+  "updated": "2026-10-20",
+  "note": "章 → 节 → 考点 的目录骨架，手写维护；与 knowledge.json 由校验脚本 npm run check 交叉核对：chapters 中列出的 id 必须存在于 knowledge.json，且每条知识点都必须被某一节列出。章/节按《王道操作系统》目录（MVP 仅展开第2、3章）。",
+  "chapters": [
+    {
+      "chapter": "第2章 进程与线程",
+      "sections": [
+        {
+          "section": "2.1 进程与线程",
+          "topics": [
+            { "id": "os-ch2-2.1-001", "title": "进程的三种基本状态及转换" },
+            { "id": "os-ch2-2.1-002", "title": "线程与进程的区别" }
+          ]
+        },
+        {
+          "section": "2.2 CPU调度",
+          "topics": [
+            { "id": "os-ch2-2.2-001", "title": "CPU 调度算法 FCFS/SJF 比较" }
+          ]
+        },
+        {
+          "section": "2.3 同步与互斥",
+          "topics": [
+            { "id": "os-ch2-2.3-001", "title": "临界区互斥的软件方法：Peterson 算法" },
+            { "id": "os-ch2-2.3-002", "title": "信号量 PV 操作的含义" },
+            { "id": "os-ch2-2.3-003", "title": "生产者-消费者问题的 PV 写法" },
+            { "id": "os-ch2-2.3-004", "title": "读者-写者问题（读优先）的 PV 写法" },
+            { "id": "os-ch2-2.3-005", "title": "管程的组成" }
+          ]
+        },
+        {
+          "section": "2.4 死锁",
+          "topics": [
+            { "id": "os-ch2-2.4-001", "title": "死锁的四个必要条件" },
+            { "id": "os-ch2-2.4-002", "title": "死锁与饥饿的区别" },
+            { "id": "os-ch2-2.4-003", "title": "银行家算法判断安全状态" },
+            { "id": "os-ch2-2.4-004", "title": "死锁预防与死锁避免的区别" },
+            { "id": "os-ch2-2.4-005", "title": "资源分配图与死锁判定" }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter": "第3章 内存管理",
+      "sections": [
+        {
+          "section": "3.2 虚拟内存管理",
+          "topics": [
+            { "id": "os-ch3-3.2-001", "title": "页面置换算法 OPT/FIFO/LRU 与 Belady 异常" }
+          ]
+        }
+      ]
+    }
+  ]
+}
