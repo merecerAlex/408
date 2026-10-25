@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN" data-theme="light">
 <head>
   <meta charset="UTF-8">
@@ -60,6 +60,10 @@
                 aria-selected="true" aria-controls="view-list" data-view="list">📚 考点列表</button>
         <button class="viewtab" type="button" role="tab" id="tab-card"
                 aria-selected="false" aria-controls="view-card" data-view="card">🎴 抽卡背诵</button>
+        <button class="viewtab" type="button" role="tab" id="tab-cards"
+                aria-selected="false" aria-controls="view-cards" data-view="cards">📄 考点卡</button>
+        <button class="viewtab" type="button" role="tab" id="tab-mastery"
+                aria-selected="false" aria-controls="view-mastery" data-view="mastery">📊 掌握列表</button>
       </div>
     </div>
   </header>
@@ -102,11 +106,17 @@
 
     <!-- 抽卡背诵视图 -->
     <section class="view" id="view-card" role="tabpanel" aria-labelledby="tab-card" hidden>
-      <!-- 抽背范围筛选 -->
+      <!-- 抽背范围筛选：科目（章）→ 小节 -->
       <div class="cardfilter">
-        <label class="cardfilter__label" for="card-chapter">抽背范围</label>
+        <label class="cardfilter__label" for="card-chapter">章节</label>
         <select id="card-chapter" class="select">
           <option value="all">全部章节</option>
+        </select>
+      </div>
+      <div class="cardfilter">
+        <label class="cardfilter__label" for="card-section">小节</label>
+        <select id="card-section" class="select">
+          <option value="all">全部小节</option>
         </select>
       </div>
 
@@ -181,6 +191,53 @@
       </div>
     </section>
 
+    <!-- 考点卡视图：章 → 卡片 → 小节，全部内联，不跳页 -->
+    <section class="view" id="view-cards" role="tabpanel" aria-labelledby="tab-cards" hidden>
+      <div class="cardfilter">
+        <label class="cardfilter__label" for="cards-chapter">章节</label>
+        <select id="cards-chapter" class="select">
+          <option value="all">全部章节</option>
+        </select>
+      </div>
+      <div class="cardfilter">
+        <label class="cardfilter__label" for="cards-doc">卡片</label>
+        <select id="cards-doc" class="select">
+          <option value="all">全部卡片</option>
+        </select>
+      </div>
+      <p class="listhead__meta" id="cards-meta"></p>
+      <div id="cards-body"></div>
+    </section>
+
+    <!-- 掌握列表视图：分章分节统计 + 一键遗忘 -->
+    <section class="view" id="view-mastery" role="tabpanel" aria-labelledby="tab-mastery" hidden>
+      <div class="mastery-summary" id="mastery-summary"></div>
+
+      <div class="cardfilter">
+        <label class="cardfilter__label" for="mastery-chapter">章节</label>
+        <select id="mastery-chapter" class="select">
+          <option value="all">全部章节</option>
+        </select>
+      </div>
+      <div class="cardfilter">
+        <label class="cardfilter__label" for="mastery-grade">只看</label>
+        <select id="mastery-grade" class="select">
+          <option value="all">全部状态</option>
+          <option value="unknown">❌ 忘了</option>
+          <option value="fuzzy">🤔 模糊</option>
+          <option value="known">✅ 会了</option>
+          <option value="untested">⚪ 未测</option>
+        </select>
+      </div>
+
+      <div class="mastery-actions">
+        <button class="btn btn--ghost btn--block" type="button" id="btn-forget-all">🔁 全部遗忘，从头二刷</button>
+      </div>
+
+      <p class="listhead__meta" id="mastery-meta"></p>
+      <div id="mastery-body"></div>
+    </section>
+
     <p class="footer" id="footer"></p>
   </main>
 
@@ -196,7 +253,6 @@
       <p class="drawer__progress" id="drawer-progress"></p>
       <button class="btn btn--ghost btn--block" type="button" id="btn-expand-all">全部展开</button>
       <button class="btn btn--ghost btn--block" type="button" id="btn-collapse-all">全部折叠</button>
-      <a class="btn btn--ghost btn--block" href="cards.html" style="text-decoration:none;text-align:center;display:block;margin-top:8px">📄 考点卡（做题导向）</a>
       <div class="drawer__io">
         <button class="btn btn--ghost" type="button" id="btn-export">⬇️ 导出记录</button>
         <button class="btn btn--ghost" type="button" id="btn-import">⬆️ 导入记录</button>

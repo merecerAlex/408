@@ -9,7 +9,7 @@
    ========================================================= */
 'use strict';
 
-const CACHE_VERSION = 'os408-v3';
+const CACHE_VERSION = 'os408-v4';
 const CACHE_NAME = `os408-${CACHE_VERSION}`;
 
 // 相对路径：支持部署在子目录（如 http://ip:8000/）
@@ -28,6 +28,7 @@ const PRECACHE = [
   './data/knowledge.json',
   './data/chapters.json',
   './data/exam_trend.json',
+  './data/cards.json',
 ];
 
 self.addEventListener('install', (event) => {

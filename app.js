@@ -11,6 +11,7 @@
   const DATA_URL = 'data/knowledge.json';
   const TREE_URL = 'data/chapters.json';
   const EXAM_TREND_URL = 'data/exam_trend.json';
+  const CARDS_URL = 'data/cards.json';
   const APP_VERSION = '0.1.0-mvp';
   const THEME_KEY = 'os408.theme';
   const VIEW_KEY = 'os408.view';
@@ -30,14 +31,27 @@
     tree: [],           // 目录树（来自 chapters.json）
     query: '',          // 搜索词
     level: 'all',       // 分级筛选：all | l1 | l2 | l3
-    view: 'list',       // list | card
+    view: 'list',       // list | card | cards | mastery
     openPanels: new Set(), // 列表里已展开的章节 key
+    openSections: new Set(), // 列表里已展开的节 key（节级折叠）
     openTopics: new Set(), // 列表里已展开答案的考点 id
     deck: [],           // 抽卡池（筛选后的有序列表）
     cardIndex: 0,
+    cardSection: 'all', // 抽卡的小节筛选
     flipped: false,
     drawerOpen: false,
     seq: 0,             // 渲染序号，用于丢弃过期的异步渲染
+    // —— 考点卡 ——
+    cardsData: null,    // data/cards.json 原始数据
+    cardsChapter: 'all',
+    cardsDoc: 'all',
+    openCardSecs: new Set(), // 考点卡里已展开的小节
+    cardsCollapsed: new Set(), // 考点卡里被用户收起的章（默认全展开）
+    // —— 掌握列表 ——
+    masteryChapter: 'all',
+    masteryGrade: 'all',
+    openMasterySecs: new Set(),
+    masteryCollapsed: new Set(), // 掌握列表里被用户收起的章（默认全展开）
     // —— 背诵记忆 ——
     progress: { cards: {} },     // { id: {grade:'known'|'fuzzy'|'unknown', reviews, lastSeen} }
     round: { no: 1, grades: new Map(), stats: { known: 0, fuzzy: 0, unknown: 0 } },
@@ -60,6 +74,8 @@
     viewTabs: document.querySelectorAll('.viewtab'),
     viewList: $('view-list'),
     viewCard: $('view-card'),
+    viewCards: $('view-cards'),
+    viewMastery: $('view-mastery'),
     skeleton: $('skeleton'),
     error: $('state-error'),
     errorTitle: $('state-error-title'),
@@ -69,6 +85,7 @@
     listMeta: $('list-meta'),
     list: $('list'),
     cardChapter: $('card-chapter'),
+    cardSection: $('card-section'),
     cardPos: $('card-pos'),
     cardScope: $('card-scope'),
     flipcard: $('flipcard'),
@@ -107,6 +124,18 @@
     exportBtn: $('btn-export'),
     importBtn: $('btn-import'),
     fileImport: $('file-import'),
+    // —— 考点卡 ——
+    cardsChapter: $('cards-chapter'),
+    cardsDoc: $('cards-doc'),
+    cardsMeta: $('cards-meta'),
+    cardsBody: $('cards-body'),
+    // —— 掌握列表 ——
+    masteryChapter: $('mastery-chapter'),
+    masteryGrade: $('mastery-grade'),
+    masterySummary: $('mastery-summary'),
+    masteryMeta: $('mastery-meta'),
+    masteryBody: $('mastery-body'),
+    forgetAll: $('btn-forget-all'),
   };
 
   /* ---------------- 小工具 ---------------- */
@@ -590,6 +619,11 @@
     el.error.style.display = 'none';
     renderBrandSub();
     renderChapterSelect();
+    // 考点卡数据（可选）：失败不影响主流程，只是「考点卡」页空着
+    try {
+      await loadCardsData();
+      renderCardsDocSelect();
+    } catch (e) { /* 忽略 */ }
     renderDrawer();
     applyFilters({ keepCard: false });
     renderFooter();
@@ -663,6 +697,374 @@
     el.footer.title = [...src].join('\n');
   }
 
+  /* =========================================================
+     考点卡视图（data/cards.json）
+     ─ 章 → 卡片（一份 md）→ 小节（h2），全部内联渲染，不跳页
+     ─ 小节可折叠；默认全部收起，点开才渲染正文（长文档首屏才不卡）
+     ========================================================= */
+
+  async function loadCardsData() {
+    if (state.cardsData) return state.cardsData;
+    try {
+      // 单文件版（standalone.html）：数据已内联，走 inline-data.cards
+      const inline = readInlineData();
+      if (inline && inline.cards) {
+        state.cardsData = inline.cards;
+        return state.cardsData;
+      }
+      const json = await fetchJson(CARDS_URL, { optional: true });
+      state.cardsData = json && Array.isArray(json.chapters) ? json : { chapters: [] };
+    } catch (e) {
+      state.cardsData = { chapters: [] };
+    }
+    return state.cardsData;
+  }
+
+  function renderCardsDocSelect() {
+    if (!el.cardsDoc) return;
+    const data = state.cardsData || { chapters: [] };
+    const chName = el.cardsChapter.value || 'all';
+    const chapters = chName === 'all' ? data.chapters : data.chapters.filter((c) => c.chapter === chName);
+    const frag = document.createDocumentFragment();
+    const all = document.createElement('option');
+    all.value = 'all';
+    all.textContent = '全部卡片';
+    frag.appendChild(all);
+    for (const ch of chapters) {
+      for (const d of ch.docs || []) {
+        const o = document.createElement('option');
+        o.value = `${ch.chapter}|${d.title}`;
+        o.textContent = `${d.title}（${d.sections.length} 节）`;
+        frag.appendChild(o);
+      }
+    }
+    el.cardsDoc.replaceChildren(frag);
+    const keep = state.cardsDoc;
+    const exists = [...el.cardsDoc.options].some((o) => o.value === keep);
+    el.cardsDoc.value = exists ? keep : 'all';
+    state.cardsDoc = el.cardsDoc.value;
+  }
+
+  function renderCards() {
+    if (!el.cardsBody) return;
+    const data = state.cardsData;
+    if (!data) {
+      el.cardsBody.innerHTML = '<p class="empty__hint">考点卡加载中…</p>';
+      loadCardsData().then(() => {
+        renderCardsDocSelect();
+        renderCards();
+      });
+      return;
+    }
+    const chapters = data.chapters || [];
+    if (!chapters.length) {
+      el.cardsBody.innerHTML = '<p class="empty__hint">还没有考点卡数据。跑一下 tools/build-cards-json.mjs 再刷新。</p>';
+      if (el.cardsMeta) el.cardsMeta.textContent = '';
+      return;
+    }
+
+    const chFilter = el.cardsChapter ? (el.cardsChapter.value || 'all') : 'all';
+    const docFilter = el.cardsDoc ? (el.cardsDoc.value || 'all') : 'all';
+
+    const frag = document.createDocumentFragment();
+    let secCount = 0;
+    let docCount = 0;
+
+    for (const ch of chapters) {
+      if (chFilter !== 'all' && ch.chapter !== chFilter) continue;
+      const docs = (ch.docs || []).filter((d) => docFilter === 'all' || `${ch.chapter}|${d.title}` === docFilter);
+      if (!docs.length) continue;
+
+      const panel = document.createElement('section');
+      panel.className = 'panel';
+
+      const total = docs.reduce((a, d) => a + d.sections.length, 0);
+      const pKey = 'cards:' + ch.chapter;
+      // 考点卡是「读」的视图：章默认展开（用户主动收起才记住）
+      const expanded = !state.cardsCollapsed.has(pKey);
+
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'panel__toggle';
+      toggle.setAttribute('aria-expanded', String(expanded));
+      toggle.innerHTML =
+        `<span class="panel__caret" aria-hidden="true">▶</span>` +
+        `<span class="panel__name"></span>` +
+        `<span class="panel__count">${total}</span>`;
+      toggle.querySelector('.panel__name').textContent = ch.chapter;
+
+      const itemsBox = document.createElement('div');
+      itemsBox.className = 'panel__items';
+      itemsBox.hidden = !expanded;
+
+      toggle.addEventListener('click', () => {
+        const open = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', String(!open));
+        itemsBox.hidden = open;
+        if (open) state.cardsCollapsed.add(pKey); else state.cardsCollapsed.delete(pKey);
+      });
+
+      for (const d of docs) {
+        docCount += 1;
+        const docHead = document.createElement('div');
+        docHead.className = 'carddoc__title';
+        docHead.textContent = d.title;
+        itemsBox.appendChild(docHead);
+
+        for (const s of d.sections) {
+          secCount += 1;
+          const sKey = `cards:${ch.chapter}|${d.title}|${s.id}`;
+          const sOpen = state.openCardSecs.has(sKey);
+
+          const box = document.createElement('div');
+          box.className = 'cardsec';
+
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'cardsec__toggle';
+          btn.setAttribute('aria-expanded', String(sOpen));
+          btn.innerHTML =
+            `<span class="sec__caret" aria-hidden="true">▶</span>` +
+            `<span class="cardsec__name"></span>`;
+          btn.querySelector('.cardsec__name').textContent = s.section;
+
+          const body = document.createElement('div');
+          body.className = 'cardsec__body';
+          body.hidden = !sOpen;
+          if (sOpen) body.innerHTML = s.html;
+          btn.addEventListener('click', () => {
+            const open = btn.getAttribute('aria-expanded') === 'true';
+            btn.setAttribute('aria-expanded', String(!open));
+            body.hidden = open;
+            if (open) {
+              state.openCardSecs.delete(sKey);
+            } else {
+              state.openCardSecs.add(sKey);
+              // 懒渲染：第一次展开才把 html 塞进去
+              if (!body.innerHTML) body.innerHTML = s.html;
+            }
+          });
+
+          box.appendChild(btn);
+          box.appendChild(body);
+          itemsBox.appendChild(box);
+        }
+      }
+
+      panel.appendChild(toggle);
+      panel.appendChild(itemsBox);
+      frag.appendChild(panel);
+    }
+
+    el.cardsBody.replaceChildren(frag);
+    if (el.cardsMeta) {
+      el.cardsMeta.textContent = docCount
+        ? `共 ${docCount} 张卡 · ${secCount} 个小节 · 点小节标题展开`
+        : '这个范围里没有考点卡';
+    }
+  }
+
+  /* =========================================================
+     掌握列表视图
+     ─ 分章 → 分节统计「已会/模糊/忘了/未测」
+     ─ 可按章、按节一键遗忘（二刷）；也可全部遗忘
+     ========================================================= */
+
+  const GRADE_LABEL = { known: '✅ 会了', fuzzy: '🤔 模糊', unknown: '❌ 忘了', '': '⚪ 未测' };
+
+  /** 一个 id 集合的掌握统计 */
+  function statsOf(ids) {
+    let known = 0, fuzzy = 0, unknown = 0, untested = 0;
+    for (const id of ids) {
+      const g = gradeOf(id);
+      if (g === 'known') known += 1;
+      else if (g === 'fuzzy') fuzzy += 1;
+      else if (g === 'unknown') unknown += 1;
+      else untested += 1;
+    }
+    const total = ids.length;
+    return { total, known, fuzzy, unknown, untested, pct: total ? Math.round((known / total) * 100) : 0 };
+  }
+
+  /** 遗忘一个 id 集合：清掉它们的自评记录，回到未测 */
+  function forgetIds(ids, label) {
+    if (!ids.length) return;
+    const real = ids.filter((id) => state.progress.cards[id]);
+    if (!real.length) {
+      announce(`${label}：没有可遗忘的记录`);
+      return;
+    }
+    if (!window.confirm(`确定把「${label}」的 ${real.length} 条自评记录清空吗？\n清空后这些考点会回到「未测」，可以重新二刷。`)) return;
+    real.forEach((id) => { delete state.progress.cards[id]; });
+    saveProgress();
+    // 若当前正在抽卡，本轮已评过的记录也一并失效
+    real.forEach((id) => state.round.grades.delete(id));
+    refreshMasteryBadges();
+    renderDrawerProgress();
+    renderMastery();
+    applyFilters({ keepCard: true });
+    announce(`已遗忘 ${real.length} 条：${label}`);
+  }
+
+  function renderMastery() {
+    if (!el.masteryBody) return;
+    const chFilter = el.masteryChapter ? (el.masteryChapter.value || 'all') : 'all';
+    const gradeFilter = el.masteryGrade ? (el.masteryGrade.value || 'all') : 'all';
+
+    // 全书统计
+    const allIds = state.items.map((it) => it.id);
+    const allStats = statsOf(allIds);
+    if (el.masterySummary) {
+      el.masterySummary.innerHTML =
+        `<div class="msum__head"><span class="msum__pct">${allStats.pct}%</span>` +
+        `<span class="msum__label">全书掌握度</span></div>` +
+        `<div class="msum__bar"><i style="width:${allStats.pct}%"></i></div>` +
+        `<div class="msum__nums">✅ ${allStats.known} · 🤔 ${allStats.fuzzy} · ❌ ${allStats.unknown} · ⚪ ${allStats.untested} · 共 ${allStats.total}</div>`;
+    }
+
+    const matchGrade = (id) => {
+      if (gradeFilter === 'all') return true;
+      const g = gradeOf(id) || '';
+      if (gradeFilter === 'untested') return g === '';
+      return g === gradeFilter;
+    };
+
+    const frag = document.createDocumentFragment();
+    let shownSecs = 0;
+    let shownIds = 0;
+
+    for (const ch of state.tree) {
+      if (chFilter !== 'all' && ch.chapter !== chFilter) continue;
+
+      const chIds = [];
+      ch.sections.forEach((sec) => sec.topicIds.forEach((id) => { if (state.byId.has(id)) chIds.push(id); }));
+      const chStats = statsOf(chIds);
+
+      // 章下面每节的命中集合
+      const secs = ch.sections
+        .map((sec) => {
+          const ids = sec.topicIds.filter((id) => state.byId.has(id));
+          const hit = ids.filter(matchGrade);
+          return { section: sec.section, ids, hit };
+        })
+        .filter((s) => s.hit.length > 0);
+      if (!secs.length) continue;
+
+      const panel = document.createElement('section');
+      panel.className = 'panel';
+
+      const pKey = 'mastery:' + ch.chapter;
+      const expanded = chFilter !== 'all' || state.openPanels.has(pKey);
+
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'panel__toggle';
+      toggle.setAttribute('aria-expanded', String(expanded));
+      toggle.innerHTML =
+        `<span class="panel__caret" aria-hidden="true">▶</span>` +
+        `<span class="panel__name"></span>` +
+        `<span class="panel__pct">${chStats.pct}%</span>` +
+        `<span class="panel__count">${chStats.known}/${chStats.total}</span>`;
+      toggle.querySelector('.panel__name').textContent = ch.chapter;
+
+      const itemsBox = document.createElement('div');
+      itemsBox.className = 'panel__items';
+      itemsBox.hidden = !expanded;
+
+      toggle.addEventListener('click', () => {
+        const open = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', String(!open));
+        itemsBox.hidden = open;
+        if (open) state.openPanels.delete(pKey); else state.openPanels.add(pKey);
+      });
+
+      // 章级遗忘按钮
+      const chBar = document.createElement('div');
+      chBar.className = 'mbar';
+      const chForget = document.createElement('button');
+      chForget.type = 'button';
+      chForget.className = 'btn btn--ghost btn--sm';
+      chForget.textContent = '🔁 本章遗忘二刷';
+      chForget.addEventListener('click', () => forgetIds(chIds, ch.chapter));
+      chBar.appendChild(chForget);
+      itemsBox.appendChild(chBar);
+
+      for (const s of secs) {
+        shownSecs += 1;
+        shownIds += s.hit.length;
+        const sKey = secKey(ch.chapter, s.section);
+        const sOpen = chFilter !== 'all' || state.openMasterySecs.has(sKey);
+        const st = statsOf(s.ids);
+
+        const box = document.createElement('div');
+        box.className = 'sec';
+
+        const head = document.createElement('div');
+        head.className = 'sec__row';
+
+        const label = document.createElement('button');
+        label.type = 'button';
+        label.className = 'sec__label sec__label--m';
+        label.setAttribute('aria-expanded', String(sOpen));
+        label.innerHTML =
+          `<span class="sec__caret" aria-hidden="true">▶</span>` +
+          `<span class="sec__name"></span>` +
+          `<span class="sec__count">${st.known}/${st.total}</span>`;
+        label.querySelector('.sec__name').textContent = s.section;
+
+        const secForget = document.createElement('button');
+        secForget.type = 'button';
+        secForget.className = 'sec__forget';
+        secForget.title = '遗忘本节，二刷';
+        secForget.textContent = '🔁';
+        secForget.addEventListener('click', () => forgetIds(s.ids, s.section));
+
+        const secItems = document.createElement('div');
+        secItems.className = 'sec__items';
+        secItems.hidden = !sOpen;
+
+        label.addEventListener('click', () => {
+          const open = label.getAttribute('aria-expanded') === 'true';
+          label.setAttribute('aria-expanded', String(!open));
+          secItems.hidden = open;
+          if (open) state.openMasterySecs.delete(sKey); else state.openMasterySecs.add(sKey);
+        });
+
+        s.hit.forEach((id) => {
+          const it = state.byId.get(id);
+          if (!it) return;
+          const row = document.createElement('div');
+          row.className = 'mrow';
+          const g = gradeOf(id) || '';
+          row.innerHTML =
+            `<span class="mrow__g" data-grade="${g}">${GRADE_LABEL[g]}</span>` +
+            `<span class="mrow__t"></span>` +
+            `<button type="button" class="mrow__forget" title="遗忘这一条">🔁</button>`;
+          row.querySelector('.mrow__t').textContent = it.title;
+          row.querySelector('.mrow__forget').addEventListener('click', () => forgetIds([id], it.title));
+          secItems.appendChild(row);
+        });
+
+        head.appendChild(label);
+        head.appendChild(secForget);
+        box.appendChild(head);
+        box.appendChild(secItems);
+        itemsBox.appendChild(box);
+      }
+
+      panel.appendChild(toggle);
+      panel.appendChild(itemsBox);
+      frag.appendChild(panel);
+    }
+
+    el.masteryBody.replaceChildren(frag);
+    if (el.masteryMeta) {
+      el.masteryMeta.textContent = shownSecs
+        ? `列出 ${shownSecs} 节 · ${shownIds} 个考点 · 点小节展开逐条遗忘`
+        : '这个范围里没有符合条件的考点';
+    }
+  }
+
   /* ---------------- 筛选（搜索 + 分级） ---------------- */
   /**
    * 返回在「搜索词」下命中的条目，以及命中的字段集合。
@@ -705,7 +1107,7 @@
     const options = opts || {};
     const { terms, filtered } = currentFiltered();
     renderList(terms, filtered);
-    buildDeck(filtered.map((r) => r.it), options.keepCard);
+    buildDeck(deckSource(), options.keepCard);
 
     const n = filtered.length;
     const total = state.items.length;
@@ -716,6 +1118,9 @@
 
     // 抽屉高亮态刷新
     syncDrawerSelection();
+    // 另外两个视图依赖同一份筛选结果，刷新一下
+    if (state.view === 'mastery') renderMastery();
+    if (state.view === 'cards') renderCards();
   }
 
   /* ---------------- 考点列表渲染 ---------------- */
@@ -778,16 +1183,42 @@
       itemsBox.hidden = !expanded;
 
       for (const s of secs) {
-        const label = document.createElement('p');
+        const sKey = secKey(ch.chapter, s.section);
+        const sOpen = autoExpand || state.openSections.has(sKey);
+
+        const secBox = document.createElement('div');
+        secBox.className = 'sec';
+
+        const label = document.createElement('button');
+        label.type = 'button';
         label.className = 'sec__label';
-        label.innerHTML = highlight(s.section, terms);
-        itemsBox.appendChild(label);
+        label.setAttribute('aria-expanded', String(sOpen));
+        label.innerHTML =
+          `<span class="sec__caret" aria-hidden="true">▶</span>` +
+          `<span class="sec__name"></span>` +
+          `<span class="sec__count">${s.ids.length}</span>`;
+        label.querySelector('.sec__name').innerHTML = highlight(s.section, terms);
+
+        const secItems = document.createElement('div');
+        secItems.className = 'sec__items';
+        secItems.hidden = !sOpen;
+
+        label.addEventListener('click', () => {
+          const open = label.getAttribute('aria-expanded') === 'true';
+          label.setAttribute('aria-expanded', String(!open));
+          secItems.hidden = open;
+          if (open) state.openSections.delete(sKey); else state.openSections.add(sKey);
+        });
 
         for (const id of s.ids) {
           const item = state.byId.get(id);
           if (!item) continue; // 目录里有、数据里缺：跳过（校验脚本会报警）
-          itemsBox.appendChild(buildTopicRow(item, terms));
+          secItems.appendChild(buildTopicRow(item, terms));
         }
+
+        secBox.appendChild(label);
+        secBox.appendChild(secItems);
+        itemsBox.appendChild(secBox);
       }
 
       panel.appendChild(toggle);
@@ -1265,14 +1696,68 @@
       frag.appendChild(opt);
     }
     el.cardChapter.replaceChildren(frag);
+
+    // 考点卡、掌握列表的章节下拉复用同一份章名
+    [el.cardsChapter, el.masteryChapter].forEach((sel) => {
+      if (!sel) return;
+      const f2 = document.createDocumentFragment();
+      const a2 = document.createElement('option');
+      a2.value = 'all';
+      a2.textContent = '全部章节';
+      f2.appendChild(a2);
+      for (const ch of state.tree) {
+        const o = document.createElement('option');
+        o.value = ch.chapter;
+        const n = ch.sections.reduce((a, s) => a + s.topicIds.length, 0);
+        o.textContent = `${ch.chapter}（${n}）`;
+        f2.appendChild(o);
+      }
+      sel.replaceChildren(f2);
+    });
+
+    renderSectionSelect();
+    renderCardsDocSelect();
   }
 
-  /** 当前抽卡范围：章节选择框 ∩ 搜索结果 ∩ 分级筛选 */
+  /** 抽卡的小节下拉：跟着章节联动 */
+  function renderSectionSelect() {
+    if (!el.cardSection) return;
+    const chName = el.cardChapter.value || 'all';
+    const frag = document.createDocumentFragment();
+    const all = document.createElement('option');
+    all.value = 'all';
+    all.textContent = '全部小节';
+    frag.appendChild(all);
+    const chapters = chName === 'all' ? state.tree : state.tree.filter((c) => c.chapter === chName);
+    for (const ch of chapters) {
+      for (const sec of ch.sections) {
+        if (!sec.topicIds.length) continue;
+        const opt = document.createElement('option');
+        opt.value = `${ch.chapter}|${sec.section}`;
+        opt.textContent = chName === 'all' ? `${sec.section}（${sec.topicIds.length}）` : `${sec.section}（${sec.topicIds.length}）`;
+        frag.appendChild(opt);
+      }
+    }
+    el.cardSection.replaceChildren(frag);
+    // 章节变了，旧的小节选择可能已不存在
+    const keep = state.cardSection;
+    const exists = [...el.cardSection.options].some((o) => o.value === keep);
+    el.cardSection.value = exists ? keep : 'all';
+    state.cardSection = el.cardSection.value;
+  }
+
+  /** 当前抽卡范围：章节 ∩ 小节 ∩ 搜索结果 ∩ 分级筛选 */
   function deckSource() {
     const { filtered } = currentFiltered();
     const ch = el.cardChapter.value || 'all';
-    const items = filtered.map((r) => r.it);
-    return ch === 'all' ? items : items.filter((it) => it.chapter === ch);
+    const sec = (el.cardSection && el.cardSection.value) || 'all';
+    let items = filtered.map((r) => r.it);
+    if (ch !== 'all') items = items.filter((it) => it.chapter === ch);
+    if (sec !== 'all') {
+      const [secCh, secName] = sec.split('|');
+      items = items.filter((it) => it.chapter === secCh && it.section === secName);
+    }
+    return items;
   }
 
   function buildDeck(items, keepCard) {
@@ -1400,11 +1885,15 @@
   }
 
   /* ---------------- 视图切换 ---------------- */
+  const VIEWS = ['list', 'card', 'cards', 'mastery'];
+
   function switchView(view, opts) {
     const options = opts || {};
-    state.view = view === 'card' ? 'card' : 'list';
+    state.view = VIEWS.indexOf(view) >= 0 ? view : 'list';
     el.viewList.hidden = state.view !== 'list';
     el.viewCard.hidden = state.view !== 'card';
+    el.viewCards.hidden = state.view !== 'cards';
+    el.viewMastery.hidden = state.view !== 'mastery';
     el.viewTabs.forEach((t) => {
       const on = t.dataset.view === state.view;
       t.classList.toggle('is-active', on);
@@ -1417,6 +1906,9 @@
       renderDrillHUD();
       syncRateButtons();
     }
+    // 切到考点卡 / 掌握列表时按需渲染
+    if (state.view === 'cards') renderCards();
+    if (state.view === 'mastery') renderMastery();
     try { localStorage.setItem(VIEW_KEY, state.view); } catch (e) { /* 隐私模式忽略 */ }
     if (!options.silent) {
       window.scrollTo({ top: 0, behavior: 'auto' });
@@ -1579,9 +2071,44 @@
     el.flip.addEventListener('click', toggleFlip);
     el.random.addEventListener('click', randomCard);
     el.cardChapter.addEventListener('change', () => {
+      renderSectionSelect();
       startRound();
       announce(`抽背范围已切换，本轮 ${state.deck.length} 张`);
     });
+    if (el.cardSection) {
+      el.cardSection.addEventListener('change', () => {
+        state.cardSection = el.cardSection.value;
+        startRound();
+        announce(`抽背范围已切换，本轮 ${state.deck.length} 张`);
+      });
+    }
+
+    // 考点卡：章节 / 卡片筛选
+    if (el.cardsChapter) {
+      el.cardsChapter.addEventListener('change', () => {
+        renderCardsDocSelect();
+        renderCards();
+      });
+    }
+    if (el.cardsDoc) {
+      el.cardsDoc.addEventListener('change', () => {
+        state.cardsDoc = el.cardsDoc.value;
+        renderCards();
+      });
+    }
+
+    // 掌握列表：章节 / 状态筛选 + 全部遗忘
+    if (el.masteryChapter) {
+      el.masteryChapter.addEventListener('change', () => { renderMastery(); });
+    }
+    if (el.masteryGrade) {
+      el.masteryGrade.addEventListener('change', () => { renderMastery(); });
+    }
+    if (el.forgetAll) {
+      el.forgetAll.addEventListener('click', () => {
+        forgetIds(state.items.map((it) => it.id), '全书');
+      });
+    }
 
     // 三档自评
     el.drillRate.addEventListener('click', (e) => {
@@ -1809,7 +2336,7 @@
       // 恢复上次视图
       let saved = null;
       try { saved = localStorage.getItem(VIEW_KEY); } catch (e) { /* 忽略 */ }
-      switchView(saved === 'card' ? 'card' : 'list', { silent: true });
+      switchView(VIEWS.indexOf(saved) >= 0 ? saved : 'list', { silent: true });
       measureTopbar();
       scheduleSplash(startedAt);
       // 首次进入抽卡视图时还没有轮次，进入时补开一轮
