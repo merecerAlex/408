@@ -698,6 +698,33 @@ mark.hl {
   touch-action: manipulation;
   transition: height .2s ease;
 }
+/* 翻到背面：答案长短不一，高度随内容自适应。
+   手机上看全答案 > 保留翻转动画，所以背面不再走 3D 固定高度，改成淡入展开。 */
+.flipcard.is-flipped {
+  height: auto;
+}
+.flipcard.is-flipped .flipcard__inner {
+  height: auto;
+  transform: none;
+  transition: none;
+}
+.flipcard.is-flipped .flipcard__face--front {
+  display: none;
+}
+.flipcard.is-flipped .flipcard__face--back {
+  position: relative;
+  inset: auto;
+  transform: none;
+  animation: face-in .16s ease;
+}
+@keyframes face-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+/* 背面展开后不再需要内部滚动条，内容整页往下排 */
+.flipcard.is-flipped .flipcard__body--scroll {
+  overflow: visible;
+}
 .flipcard__inner {
   position: relative;
   width: 100%;
@@ -802,14 +829,130 @@ mark.hl {
   font-size: 15px;
   line-height: 1.75;
   color: var(--text);
-  white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-/* 答案里的 **重点** 由 app.js 的 richText() 转成 <strong> */
+/* 答案排版：由 app.js 的 richAnswer() 生成结构化块（2026-10-25 重做） */
 .flipcard__answer strong {
   font-weight: 800;
   color: var(--text);
   background: linear-gradient(transparent 62%, var(--hl-bg) 62%, var(--hl-bg) 92%, transparent 92%);
+}
+
+/* 段落 */
+.flipcard__answer .ans-p {
+  margin: 0 0 10px;
+}
+.flipcard__answer .ans-p:last-child {
+  margin-bottom: 0;
+}
+
+/* 【小标题】正文 —— 左侧竖线 + 标签胶囊 */
+.flipcard__answer .ans-sec {
+  margin: 0 0 12px;
+  padding: 8px 0 8px 11px;
+  border-left: 3px solid var(--accent, #4a7cff);
+  background: linear-gradient(90deg, rgba(74, 124, 255, 0.06), transparent 70%);
+  border-radius: 0 8px 8px 0;
+}
+.flipcard__answer .ans-sec:last-child {
+  margin-bottom: 0;
+}
+.flipcard__answer .ans-tag {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: var(--accent, #4a7cff);
+  padding: 2px 9px;
+  border-radius: 999px;
+  margin-bottom: 6px;
+}
+.flipcard__answer .ans-sec__body {
+  margin: 0;
+}
+
+/* 易错点 / 背诵要点 提示块 */
+.flipcard__answer .ans-warn {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0 0 12px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: rgba(255, 176, 32, 0.12);
+  border: 1px solid rgba(255, 176, 32, 0.35);
+}
+.flipcard__answer .ans-warn__k {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 800;
+  color: #b26a00;
+  padding-top: 1px;
+  white-space: nowrap;
+}
+.flipcard__answer .ans-warn__v {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* 列表：圈号 / 数字 / 项目符号 */
+.flipcard__answer .ans-ul,
+.flipcard__answer .ans-ol {
+  margin: 0 0 12px;
+  padding-left: 0;
+  list-style: none;
+}
+.flipcard__answer .ans-ul:last-child,
+.flipcard__answer .ans-ol:last-child {
+  margin-bottom: 0;
+}
+.flipcard__answer .ans-ul > li,
+.flipcard__answer .ans-ol > li {
+  position: relative;
+  padding: 5px 0 5px 26px;
+  border-top: 1px solid rgba(127, 127, 127, 0.14);
+}
+.flipcard__answer .ans-ul > li:first-child,
+.flipcard__answer .ans-ol > li:first-child {
+  border-top: 0;
+}
+/* 圈号行自带 ①，隐藏掉自己的小圆点避免重复 */
+.flipcard__answer .ans-ul > li::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 13px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent, #4a7cff);
+  opacity: 0.65;
+}
+/* 圈号列表本身以圈号打头时不需要小圆点 */
+.flipcard__answer .ans-ul.is-circled > li::before {
+  display: none;
+}
+.flipcard__answer .ans-ol {
+  counter-reset: ansol;
+}
+.flipcard__answer .ans-ol > li {
+  counter-increment: ansol;
+}
+.flipcard__answer .ans-ol > li::before {
+  content: counter(ansol);
+  position: absolute;
+  left: 0;
+  top: 7px;
+  min-width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--accent, #4a7cff);
+  border-radius: 6px;
 }
 .flipcard__source {
   margin-top: 10px;

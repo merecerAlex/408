@@ -191,6 +191,112 @@
     return s;
   }
 
+  /* ---------------- 答案排版（2026-10-25 重做） ----------------
+     源数据三种写法混在一起：
+       第1、2章：【结论】xxx + ①②③ 圈号，** 加粗
+       第3、4章：【结论】xxx + 数字编号
+       第5章  ：1. 2. 3. 编号 + 「背诵要点：」
+     以前整段 pre-wrap 直接糊上去，手机上就是一大块密不透风的字。
+     现在按行切成：小标题块 / 圈号列表 / 数字列表 / 项目符号 / 易错点提示。
+     只用白名单标签，文本一律 escapeHtml，不做任何原文 innerHTML 直插。
+     ------------------------------------------------------------ */
+
+  // 圈号 → 用于判断一行是否以圈号打头
+  const CIRCLED = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
+
+  /** 行内格式化：转义（或搜索高亮）+ ** → <strong> + 清掉未配对星号 */
+  function fmtInline(str, terms) {
+    let s = terms && terms.length ? highlight(normalize(str), terms) : escapeHtml(normalize(str));
+    s = s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/\*\*/g, '');
+    return s;
+  }
+
+  /** 一段正文若以圈号打头，切成 <ul>；否则原样 */
+  function fmtBody(str, terms) {
+    const t = normalize(str).trim();
+    if (!t) return '';
+    if (CIRCLED.includes(t.charAt(0))) {
+      const parts = t.split(new RegExp(`(?=[${CIRCLED}])`)).map((x) => x.trim()).filter(Boolean);
+      if (parts.length > 1) {
+        return `<ul class="ans-ul is-circled">${parts.map((p) => `<li>${fmtInline(p, terms)}</li>`).join('')}</ul>`;
+      }
+    }
+    return fmtInline(t, terms);
+  }
+
+  /** 答案文本 → 结构化 HTML（按行切块，不再整段 pre-wrap） */
+  function richAnswer(text, terms) {
+    const lines = normalize(text)
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const out = [];
+    let i = 0;
+
+    while (i < lines.length) {
+      const line = lines[i];
+
+      // ① 【小标题】正文
+      const tag = line.match(/^【([^】]{1,16})】\s*(.*)$/);
+      if (tag) {
+        out.push(
+          `<div class="ans-sec"><span class="ans-tag">${escapeHtml(tag[1])}</span>` +
+          `<div class="ans-sec__body">${fmtBody(tag[2], terms)}</div></div>`
+        );
+        i += 1;
+        continue;
+      }
+
+      // ② 易错点 / 背诵要点 / 注意 等提示行
+      const warn = line.match(/^(易错点|易错|注意|提醒|背诵要点|口诀|判别|技巧|小结)[:：]\s*(.*)$/);
+      if (warn) {
+        out.push(
+          `<div class="ans-warn"><span class="ans-warn__k">${escapeHtml(warn[1])}</span>` +
+          `<div class="ans-warn__v">${fmtBody(warn[2], terms)}</div></div>`
+        );
+        i += 1;
+        continue;
+      }
+
+      // ③ 圈号打头的整行（①②③…）
+      if (CIRCLED.includes(line.charAt(0))) {
+        const parts = line.split(new RegExp(`(?=[${CIRCLED}])`)).map((x) => x.trim()).filter(Boolean);
+        out.push(`<ul class="ans-ul is-circled">${parts.map((p) => `<li>${fmtInline(p, terms)}</li>`).join('')}</ul>`);
+        i += 1;
+        continue;
+      }
+
+      // ④ 连续的数字编号行 → <ol>
+      if (/^\d+[.、)]\s*\S/.test(line)) {
+        const items = [];
+        while (i < lines.length && /^\d+[.、)]\s*\S/.test(lines[i])) {
+          items.push(fmtInline(lines[i].replace(/^\d+[.、)]\s*/, ''), terms));
+          i += 1;
+        }
+        out.push(`<ol class="ans-ol">${items.map((t) => `<li>${t}</li>`).join('')}</ol>`);
+        continue;
+      }
+
+      // ⑤ 连续的 · / • / - 项目符号行 → <ul>
+      if (/^[·•\-—]\s*\S/.test(line)) {
+        const items = [];
+        while (i < lines.length && /^[·•\-—]\s*\S/.test(lines[i])) {
+          items.push(fmtInline(lines[i].replace(/^[·•\-—]\s*/, ''), terms));
+          i += 1;
+        }
+        out.push(`<ul class="ans-ul">${items.map((t) => `<li>${t}</li>`).join('')}</ul>`);
+        continue;
+      }
+
+      // ⑥ 普通段落（源数据里偶有未闭合的「【」，直接去掉，别让它孤零零挂在行首）
+      out.push(`<p class="ans-p">${fmtInline(line.replace(/^【/, ''), terms)}</p>`);
+      i += 1;
+    }
+
+    return out.join('') || '<p class="ans-p"></p>';
+  }
+
   function levelInfo(level) {
     return LEVELS[level] || { label: '未分级', short: '?', icon: '·', order: 9 };
   }
@@ -1295,7 +1401,18 @@
     return span;
   }
 
-  function startRound() {
+  /**
+   * 开一轮背诵。
+   * opts.rebuild = true 时先按当前「章节 ∩ 小节 ∩ 搜索 ∩ 分级」重新取池子——
+   * 切换章节/小节必须走这条，否则会拿上一轮的旧 deck 开新轮（筛选看起来没反应）。
+   */
+  function startRound(opts) {
+    const options = opts || {};
+    if (options.rebuild) {
+      state.deck = deckSource();
+      state.cardIndex = 0;
+      setFlipped(false);
+    }
     state.round = { no: state.round.no || 1, grades: new Map(), stats: { known: 0, fuzzy: 0, unknown: 0 } };
     state.queue = state.deck.slice();          // 本轮待过队列
     state.cardIndex = 0;
@@ -1485,7 +1602,7 @@
     answer.className = 'topic__answer';
     answer.hidden = !open;
     const body = document.createElement('div');
-    body.innerHTML = highlight(item.answer, terms);
+    body.innerHTML = richAnswer(item.answer, terms);
     const src = document.createElement('span');
     src.className = 'topic__source';
     src.textContent = item.source + (item.status === 'draft' ? ' · 草稿' : '');
@@ -1818,7 +1935,7 @@
 
     // 背面
     el.cardTitleBack.textContent = item.title;
-    el.cardAnswer.innerHTML = richText(item.answer);
+    el.cardAnswer.innerHTML = richAnswer(item.answer, splitQuery(state.query));
     el.cardSource.textContent = item.source + (item.status === 'draft' ? ' · 草稿，待正式校对' : '');
     el.cardBadgesBack.innerHTML =
       levelBadge(item.level) +
@@ -1871,7 +1988,7 @@
     if (el.cardChapter.value !== 'all' && item.chapter !== el.cardChapter.value) {
       el.cardChapter.value = 'all';
     }
-    startRound();
+    startRound({ rebuild: true });
     if (item) {
       const idx = state.deck.findIndex((it) => it.id === item.id);
       if (idx >= 0) state.cardIndex = idx;
@@ -2072,13 +2189,17 @@
     el.random.addEventListener('click', randomCard);
     el.cardChapter.addEventListener('change', () => {
       renderSectionSelect();
-      startRound();
+      startRound({ rebuild: true });
+      renderDrillHUD();
+      syncRateButtons();
       announce(`抽背范围已切换，本轮 ${state.deck.length} 张`);
     });
     if (el.cardSection) {
       el.cardSection.addEventListener('change', () => {
         state.cardSection = el.cardSection.value;
-        startRound();
+        startRound({ rebuild: true });
+        renderDrillHUD();
+        syncRateButtons();
         announce(`抽背范围已切换，本轮 ${state.deck.length} 张`);
       });
     }

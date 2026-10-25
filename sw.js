@@ -9,7 +9,7 @@
    ========================================================= */
 'use strict';
 
-const CACHE_VERSION = 'os408-v4';
+const CACHE_VERSION = 'os408-v5';
 const CACHE_NAME = `os408-${CACHE_VERSION}`;
 
 // 相对路径：支持部署在子目录（如 http://ip:8000/）
@@ -122,7 +122,24 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 静态资源：缓存优先，后台更新
+  // 静态资源：**代码类**（html/js/css）走网络优先，避免「按钮在、点了没反应」的旧逻辑问题
+  // 其余（图标等）缓存优先，省流量
+  const isCode = /\.(?:html|js|css)$/i.test(url.pathname) || url.pathname.endsWith('/');
+  if (isCode) {
+    event.respondWith(
+      guardedFetch(req, url)
+        .then((res) => {
+          if (res && res.ok && res.type === 'basic') {
+            const copy = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(() => {});
+          }
+          return res;
+        })
+        .catch(() => caches.match(req).then((hit) => hit || Promise.reject(new Error('[sw] 离线且未缓存：' + url.pathname))))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(req).then((hit) => {
       if (hit) return hit;
