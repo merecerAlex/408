@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>考点卡 · 第 4 章 文件管理（做题导向版）</title>
+<meta name="theme-color" content="#f2f5f9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="408 考点卡">
+<style>
+:root{
+  --bg:#f2f5f9; --bg-elev:#fff; --bg-sunken:#e9eef5;
+  --text:#12212f; --text-2:#46586b; --text-3:#6b7c8f;
+  --border:#d5dfea; --brand:#1f6feb; --accent:#f0672b;
+  --warn-bg:#fff6e5; --warn-line:#f0a02b;
+  --code-bg:#1e2733; --code-fg:#e6edf3;
+  --radius:14px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Cascadia Mono",monospace;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1620; --bg-elev:#16202c; --bg-sunken:#0a1119;
+    --text:#e6edf3; --text-2:#a8b8c8; --text-3:#7b8b9c;
+    --border:#263445; --brand:#4b8ef7;
+    --warn-bg:#2a2110; --warn-line:#c98a1f;
+    --code-bg:#0a1119; --code-fg:#d6e2ee;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{
+  margin:0;padding:0 16px calc(96px + var(--safe-b));
+  background:var(--bg);color:var(--text);
+  font-family:var(--font);line-height:1.78;
+  word-break:break-word;overflow-x:hidden;
+}
+main{max-width:760px;margin:0 auto}
+
+/* 顶部进度条 */
+#bar{position:fixed;top:0;left:0;height:3px;width:0;background:var(--brand);z-index:99;transition:width .1s linear}
+
+/* 标题 */
+h1{font-size:1.5rem;line-height:1.4;margin:28px 0 16px;letter-spacing:-.01em}
+h2{
+  font-size:1.2rem;margin:36px 0 14px;padding-top:14px;
+  border-top:1px solid var(--border);
+}
+h3{font-size:1.05rem;margin:26px 0 10px;color:var(--brand)}
+h4{font-size:.98rem;margin:20px 0 8px}
+h1:first-child{margin-top:16px}
+
+/* 段落 */
+p{margin:10px 0}
+strong{font-weight:600;color:var(--text)}
+em{font-style:normal;color:var(--accent);font-weight:600}
+
+/* 行内代码 */
+code{
+  font-family:var(--mono);font-size:.86em;
+  background:var(--bg-sunken);color:var(--brand);
+  padding:.14em .38em;border-radius:5px;
+  word-break:break-word;
+  overflow-wrap:anywhere;
+  max-width:100%;
+}
+
+/* 代码块 */
+pre.code{
+  background:var(--code-bg);color:var(--code-fg);
+  padding:14px 16px;border-radius:var(--radius);
+  margin:14px 0;
+  font-size:.84rem;line-height:1.7;
+  white-space:pre-wrap;
+  word-break:break-word;
+  overflow-wrap:anywhere;
+  overflow-x:visible;
+}
+pre.code code{background:none;color:inherit;padding:0;font-size:1em;white-space:inherit}
+
+/* 引用 / 提醒 */
+blockquote{
+  margin:14px 0;padding:11px 13px;
+  background:var(--warn-bg);
+  border-left:3px solid var(--warn-line);
+  border-radius:0 var(--radius) var(--radius) 0;
+  color:var(--text-2);font-size:.9rem;line-height:1.62;
+}
+blockquote strong{color:var(--text)}
+
+/* 列表 */
+ul,ol{margin:10px 0;padding-left:1.35em}
+li{margin:6px 0}
+li::marker{color:var(--brand)}
+
+/* 分隔线 */
+hr{border:none;border-top:1px solid var(--border);margin:28px 0}
+
+/* 链接 */
+a{color:var(--brand);text-decoration:none;border-bottom:1px solid transparent}
+a:active{border-bottom-color:var(--brand)}
+
+/* ========== 紧凑清单（≤3 列的窄表） ========== */
+.mini-list{
+  margin:16px 0;
+  background:var(--bg-elev);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+.mini{
+  padding:12px 14px;
+  border-bottom:1px solid var(--border);
+}
+.mini:last-child{border-bottom:none}
+.mini__k{
+  font-size:.98rem;font-weight:600;color:var(--text);
+  margin-bottom:5px;line-height:1.45;
+}
+.mini__v{
+  font-size:.92rem;color:var(--text-2);line-height:1.7;
+}
+.mini__l{
+  display:inline-block;
+  font-size:.74rem;font-weight:600;
+  color:var(--text-3);
+  background:var(--bg-sunken);
+  padding:1px 6px;border-radius:4px;
+  margin-right:5px;vertical-align:1px;
+}
+.mini__sep{color:var(--border-strong,#b9c8d8);margin:0 7px;font-weight:400}
+.mini code{font-size:.86em}
+.mini em{color:var(--accent);font-weight:600}
+
+/* ========== 转置卡（维度表：一个对象一张卡） ========== */
+.tr-list{display:flex;flex-direction:column;gap:12px;margin:16px 0}
+.tr-card{
+  background:var(--bg-elev);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+.tr-title{
+  padding:11px 14px;
+  background:var(--bg-sunken);
+  font-size:.96rem;font-weight:700;color:var(--text);
+  border-bottom:1px solid var(--border);
+}
+.tr-row{
+  display:flex;gap:10px;
+  padding:9px 14px;
+  border-bottom:1px solid var(--border);
+  font-size:.9rem;line-height:1.62;
+}
+.tr-row:last-child{border-bottom:none}
+.tr-k{
+  flex:0 0 5.4em;
+  color:var(--text-3);
+  font-size:.82rem;
+  padding-top:1px;
+}
+.tr-v{flex:1 1 auto;color:var(--text-2);min-width:0}
+.tr-v strong{color:var(--text)}
+.tr-v code{font-size:.85em}
+
+/* ========== 表格：窄屏变竖排卡片（核心） ========== */
+.table-wrap{margin:16px 0}
+table{
+  width:100%;border-collapse:collapse;
+  font-size:.92rem;
+  background:var(--bg-elev);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+th,td{
+  padding:9px 11px;text-align:left;
+  border-bottom:1px solid var(--border);
+  vertical-align:top;
+}
+th{
+  background:var(--bg-sunken);font-weight:600;
+  font-size:.86rem;color:var(--text-2);
+  white-space:nowrap;
+}
+tr:last-child td{border-bottom:none}
+td code{font-size:.84em}
+
+@media (max-width:640px){
+  table,tbody,tr,td{display:block;width:100%}
+  thead{display:none}
+  table{background:none;border-radius:0}
+  tbody tr{
+    background:var(--bg-elev);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:12px 14px;
+    margin-bottom:12px;
+  }
+  tbody tr:last-child{margin-bottom:0}
+  tbody td{
+    display:block;
+    padding:7px 0;
+    border-bottom:1px dashed var(--border);
+  }
+  tbody td:last-child{border-bottom:none;padding-bottom:0}
+  tbody td:first-child{padding-top:0}
+  tbody td::before{
+    content:attr(data-label);
+    display:block;
+    font-size:.76rem;
+    font-weight:600;
+    color:var(--text-3);
+    letter-spacing:.03em;
+    margin-bottom:3px;
+    text-transform:none;
+  }
+  /* 第一格（通常是「项 / 名称」）强化成卡片标题 */
+  tbody td:first-child{
+    font-size:1.02rem;
+    font-weight:600;
+    color:var(--text);
+  }
+  tbody td:first-child::before{display:none}
+}
+
+/* 自测清单复选框 */
+.check{
+  display:flex;gap:11px;align-items:flex-start;
+  padding:11px 13px;margin:7px 0;
+  background:var(--bg-elev);
+  border:1px solid var(--border);
+  border-radius:10px;
+  cursor:pointer;
+  font-size:.94rem;
+  line-height:1.6;
+}
+.check input{
+  flex:0 0 auto;width:20px;height:20px;margin:2px 0 0;
+  accent-color:var(--brand);
+}
+.check:has(input:checked){opacity:.5}
+.check:has(input:checked) span{text-decoration:line-through}
+
+/* ========== 目录抽屉 ========== */
+#toc-btn{
+  position:fixed;right:16px;bottom:calc(20px + var(--safe-b));
+  width:54px;height:54px;border-radius:50%;
+  background:var(--brand);color:#fff;border:none;
+  font-size:20px;line-height:54px;text-align:center;
+  box-shadow:0 4px 16px rgba(31,111,235,.36);
+  z-index:60;cursor:pointer;padding:0;
+}
+#toc{
+  position:fixed;inset:0;z-index:70;
+  background:rgba(8,14,22,.55);
+  backdrop-filter:blur(3px);
+  display:none;
+  padding:0;
+}
+#toc.open{display:block}
+#toc__panel{
+  position:absolute;right:0;top:0;bottom:0;
+  width:min(86vw,340px);
+  background:var(--bg-elev);
+  overflow-y:auto;
+  padding:22px 18px calc(24px + var(--safe-b));
+  box-shadow:-8px 0 32px rgba(0,0,0,.24);
+}
+#toc__panel h5{
+  margin:0 0 14px;font-size:.78rem;letter-spacing:.08em;
+  color:var(--text-3);text-transform:uppercase;font-weight:600;
+}
+.toc__item{
+  display:block;padding:10px 0;
+  border-bottom:1px solid var(--border);
+  color:var(--text);font-size:.93rem;
+  border-left:none;
+}
+.toc__item--l1{font-weight:700}
+.toc__item--l2{padding-left:0}
+.toc__item--l3{padding-left:16px;font-size:.88rem;color:var(--text-2)}
+#toc__close{
+  position:absolute;top:14px;right:14px;
+  width:38px;height:38px;border-radius:50%;
+  background:var(--bg-sunken);border:none;
+  color:var(--text-2);font-size:17px;cursor:pointer;
+}
+
+/* 返回顶部 */
+#top-btn{
+  position:fixed;left:16px;bottom:calc(20px + var(--safe-b));
+  width:44px;height:44px;border-radius:50%;
+  background:var(--bg-elev);color:var(--text-2);
+  border:1px solid var(--border);
+  font-size:16px;z-index:60;cursor:pointer;
+  box-shadow:0 2px 10px rgba(0,0,0,.1);
+  display:none;
+}
+#top-btn.show{display:block}
+
+@media print{
+  #toc,#toc-btn,#top-btn,#bar{display:none!important}
+  body{padding:0}
+  table{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+
+<main>
+<h1 id="sec-1">考点卡 · 第 4 章 文件管理（做题导向版）</h1>
+<blockquote><strong>适用</strong>：408 操作系统 · 王道 第 4 章<br><strong>口径</strong>：本条卡所有数字与结论来自 <code>os/data/_parts/ch4.json</code>（38 条已整理条目）<br><strong>状态</strong>：结构完整，公式全部可复算；<strong>书页码待核</strong>（OCR 缺页，不写书页号，避免编造）<br><strong>制卡</strong>：小狐仙 · 2026-10-25<br><strong>用法</strong>：不是拿来看的，是拿来<strong>照着套</strong>的。每一节都是「看到这种题 → 走这个流程 → 别踩这个坑」。</blockquote>
+<hr>
+<h2 id="sec-2">0. 考场速查（考前 10 分钟只看这一页）</h2>
+<div class="mini-list"><div class="mini"><div class="mini__k">逻辑块号</div><div class="mini__v"><code>i = ⌊off / B⌋</code><span class="mini__sep">·</span>从 <strong>0</strong> 开始编号</div></div><div class="mini"><div class="mini__k">块内偏移</div><div class="mini__v"><code>d = off mod B</code><span class="mini__sep">·</span>单位是<strong>字节</strong></div></div><div class="mini"><div class="mini__k">连续分配物理块</div><div class="mini__v"><code>b = start + i</code><span class="mini__sep">·</span>一次加法，零额外 I/O</div></div><div class="mini"><div class="mini__k">索引块表项数</div><div class="mini__v"><code>K = 块大小 ÷ 地址项大小</code><span class="mini__sep">·</span><strong>K 必须按题给重算，不许死记 1024</strong></div></div><div class="mini"><div class="mini__k">n 级索引覆盖块数</div><div class="mini__v"><code>K^n</code><span class="mini__sep">·</span>单级 K、二级 K²、三级 K³</div></div><div class="mini"><div class="mini__k">混合索引总块数</div><div class="mini__v"><code>直接项数 + K + K² + K³</code><span class="mini__sep">·</span>再乘块大小才是最大文件长度</div></div><div class="mini"><div class="mini__k">位示图 块号→字号/位号</div><div class="mini__v"><code>字号 = ⌊b/n⌋</code>，<code>位号 = b mod n</code><span class="mini__sep">·</span>n = 每字位数</div></div><div class="mini"><div class="mini__k">位示图 字号/位号→块号</div><div class="mini__v"><code>b = i×n + j</code><span class="mini__sep">·</span>行列若从 1 起，先各减 1</div></div><div class="mini"><div class="mini__k">位示图占空间</div><div class="mini__v"><code>盘块数 ÷ 8</code> 字节<span class="mini__sep">·</span>或 <code>÷ n</code> 个字</div></div><div class="mini"><div class="mini__k">FAT 表项数</div><div class="mini__v"><code>= 磁盘盘块总数</code><span class="mini__sep">·</span>每项还要 1 位标志位</div></div><div class="mini"><div class="mini__k">不死锁最少资源数</div><div class="mini__v"><code>m ≥ n(r−1) + 1</code><span class="mini__sep">·</span>严格大于号 <code>m &gt; n(r−1)</code> 等价于此</div></div></div>
+<hr>
+<h2 id="sec-3">1. 五大计算题型（80% 的题都在这）</h2>
+<h3 id="sec-4">题型 A：逻辑块号 → 物理块号（连续分配）</h3>
+<p><strong>识别标志</strong>：题目给「起始块号 + 文件长度」，问「偏移 X 字节在第几块 / 物理地址是多少」。</p>
+<p><strong>流程</strong>：</p>
+<ol><li><code>i = ⌊off / B⌋</code></li><li>判越界：<code>i ≥ n</code>（n 为文件块数）→ 访问失败</li><li><code>b = start + i</code></li><li><code>d = off mod B</code></li><li>物理地址 = <code>b × B + d</code></li></ol>
+<p><strong>例题</strong>：B = 1KB，start = 20，读偏移 3000 字节。</p>
+<ul><li><code>i = ⌊3000/1024⌋ = 2</code></li><li><code>b = 20 + 2 = 22</code></li><li><code>d = 3000 − 2048 = 952</code></li><li>物理地址 = <code>22 × 1024 + 952</code></li></ul>
+<p><strong>坑</strong>：</p>
+<ul><li>逻辑块号从 <strong>0</strong> 起，不是从 1。</li><li>只有<strong>连续分配</strong>能这么做。链接分配和索引分配不能直接 <code>start + i</code>。</li></ul>
+<hr>
+<h3 id="sec-5">题型 B：索引容量与最大文件长度</h3>
+<p><strong>识别标志</strong>：题目给「块大小 + 地址项大小 + 几级索引」，问「能表示多大的文件 / 最大块号是多少」。</p>
+<p><strong>第一步永远是算 K</strong>：</p>
+<pre class="code"><code>K = 盘块大小 ÷ 每个盘块号所占字节数</code></pre>
+<ul><li>4KB 块 + 4B 地址 → <code>K = 4096/4 = 1024 = 2^10</code></li><li><strong>1KB 块 + 4B 地址 → <code>K = 256</code></strong> ← 这是最常考的变体，死记 1024 必错</li></ul>
+<p><strong>第二步套级数</strong>：</p>
+<div class="mini-list"><div class="mini"><div class="mini__k">单级</div><div class="mini__v">K<span class="mini__sep">·</span>1024 × 4KB = <strong>4MB</strong></div></div><div class="mini"><div class="mini__k">二级</div><div class="mini__v">K²<span class="mini__sep">·</span>2^20 × 4KB = <strong>4GB</strong></div></div><div class="mini"><div class="mini__k">三级</div><div class="mini__v">K³<span class="mini__sep">·</span>2^30 × 4KB = <strong>4TB</strong></div></div></div>
+<p><strong>二级索引的块号拆分</strong>（要会手算）：</p>
+<ul><li><code>k1 = ⌊i / K⌋</code>（一级索引块内第几项）</li><li><code>k2 = i mod K</code>（二级索引块内第几项）</li></ul>
+<p><strong>代价</strong>：最坏读 3 次盘（一级索引块 + 二级索引块 + 数据块）。</p>
+<hr>
+<h3 id="sec-6">题型 C：混合索引（UNIX 风格）★ 最高频</h3>
+<p><strong>识别标志</strong>：题目给「索引结点含 10 个直接项、1 个一级间接、1 个二级间接、1 个三级间接」，问「最大文件长度」或「第 X 号逻辑块走哪条路、读几次盘」。</p>
+<p><strong>第一层：各类地址覆盖多少块</strong></p>
+<div class="mini-list"><div class="mini"><div class="mini__k">直接地址（10 项）</div><div class="mini__v">10<span class="mini__sep">·</span>0 ~ 9</div></div><div class="mini"><div class="mini__k">一级间接</div><div class="mini__v">K<span class="mini__sep">·</span>10 ~ 10+K−1（10 ~ 1033）</div></div><div class="mini"><div class="mini__k">二级间接</div><div class="mini__v">K²<span class="mini__sep">·</span>1034 ~ 1034+K²−1</div></div><div class="mini"><div class="mini__k">三级间接</div><div class="mini__v">K³<span class="mini__sep">·</span>接着往下</div></div></div>
+<p><strong>第二层：最大文件长度</strong></p>
+<pre class="code"><code>总块数 = 10 + K + K² + K³
+最大长度 = 总块数 × 盘块大小</code></pre>
+<p>K = 1024、块 4KB 时：</p>
+<p><code>10 + 2^10 + 2^20 + 2^30</code> 块</p>
+<p>≈ <strong>4TB + 4GB + 4MB + 40KB</strong></p>
+<p><strong>第三层：给一个逻辑块号 i，问走哪条路、读几次盘</strong></p>
+<div class="mini-list"><div class="mini"><div class="mini__k"><code>i &lt; 10</code></div><div class="mini__v">直接项<span class="mini__sep">·</span>0</div></div><div class="mini"><div class="mini__k"><code>10 ≤ i &lt; 10+K</code></div><div class="mini__v">一级间接，<code>j = i − 10</code><span class="mini__sep">·</span>1</div></div><div class="mini"><div class="mini__k">落在二级区</div><div class="mini__v"><code>j = i − (10+K)</code>，拆 <code>⌊j/K⌋</code> 和 <code>j mod K</code><span class="mini__sep">·</span>2</div></div><div class="mini"><div class="mini__k">落在三级区</div><div class="mini__v">按 <code>j/K²</code>、<code>(j mod K²)/K</code>、<code>j mod K</code> 拆三级<span class="mini__sep">·</span>3</div></div></div>
+<p><strong>加上数据块本身，总访盘次数 = 上表 + 1。</strong></p>
+<p><strong>坑</strong>：</p>
+<ul><li>「访问第 i 块要几次访盘」<strong>必须把数据块算进去</strong>。题目若明说「索引块已在内存」，才只计数据块。</li><li>K 一定要按题给数据重算。</li></ul>
+<hr>
+<h3 id="sec-7">题型 D：位示图换算 ★ 最高频</h3>
+<p><strong>识别标志</strong>：题目给「字长 n 位 / 每行 n 位」，问「盘块号 b 对应第几字第几位 / 第几行第几列」。</p>
+<p><strong>核心公式（全部从 0 起编号时）</strong>：</p>
+<pre class="code"><code>字号 i = ⌊b / n⌋
+位号 j = b mod n
+反算：b = i × n + j</code></pre>
+<p><strong>若题目说行列从 1 起编号</strong>：</p>
+<pre class="code"><code>行号 = ⌊b/n⌋ + 1
+列号 = (b mod n) + 1
+反算：b = (行号−1) × n + (列号−1)</code></pre>
+<p><strong>例题</strong>：字长 n = 16 位，共 256 个字（4096 个盘块）</p>
+<ul><li>(1) <code>b = 100</code> → 字号 <code>⌊100/16⌋ = 6</code>，位号 <code>100 − 96 = 4</code>；行号 7，列号 5</li><li>(2) 行 5 列 3 → 字号 4、位号 2 → <code>b = 4×16 + 2 = 66</code></li></ul>
+<p><strong>位示图占多少空间</strong>：</p>
+<p><code>盘块数 ÷ 8</code> 字节，或 <code>盘块数 ÷ n</code> 个字。</p>
+<p><strong>坑</strong>：</p>
+<ol><li>先看清「字长 n」和「行列从 0 还是从 1」——这两个条件错一个，答案全错。</li><li>字号/位号是<strong>位示图</strong>的定位，盘块号是<strong>磁盘</strong>的定位，两者只靠 <code>b = i×n + j</code> 换算，别混。</li><li>0 = 空闲、1 = 已分配（题设另有规定以题为准，<strong>一定要读题</strong>）。</li></ol>
+<hr>
+<h3 id="sec-8">题型 E：FAT 大小与 FAT 链</h3>
+<p><strong>识别标志</strong>：题目给「磁盘大小 + 块大小」，问「FAT 有多少表项 / 占多大空间」。</p>
+<p><strong>流程</strong>：</p>
+<ol><li>盘块数 = <code>磁盘容量 ÷ 块大小</code></li><li>FAT 表项数 = <strong>盘块数</strong>（一个盘块对应一个表项）</li><li>每个表项 = 指针位数 + <strong>1 位标志位</strong></li><li>FAT 总大小 = <code>盘块数 × (指针位数 + 1) ÷ 8</code> 字节</li></ol>
+<p><strong>FAT 的随机访问</strong>：链在<strong>内存</strong>里走，所以能随机访问第 i 块。但<strong>真正读那块数据仍要 1 次磁盘 I/O</strong>。</p>
+<p><strong>坑（三个高频混淆）</strong>：</p>
+<div class="mini-list"><div class="mini"><div class="mini__k">FAT vs 位示图/成组链接</div><div class="mini__v">问一句「这张表记的是<strong>已用</strong>的还是<strong>空闲</strong>的」——FAT 记已用，另两个记空闲</div></div><div class="mini"><div class="mini__k">FAT vs 索引分配</div><div class="mini__v">都是随机访问。区别：FAT 是<strong>全局一张表</strong>，索引分配是<strong>每个文件一块索引表</strong></div></div><div class="mini"><div class="mini__k">随机访问 ≠ 零 I/O</div><div class="mini__v">FAT 定位不需读盘，但取数据要读盘</div></div></div>
+<hr>
+<h3 id="sec-9">题型 F：目录检索的 I/O 次数</h3>
+<p><strong>识别标志</strong>：题目问「按绝对路径 /a/b/c.txt 访问文件，需要读几次磁盘」。</p>
+<p><strong>数法</strong>：</p>
+<ol><li>根目录<strong>一般</strong>常驻内存（<strong>这是常见题设简化，不是硬结论</strong>；题目若给了根目录位置或要求计根目录 I/O，必须计入）。</li><li>若目录项已拆成「文件名 + 索引结点号」：每级读 <strong>1 次目录块</strong>，名字匹配后再读 <strong>1 次索引结点</strong>。</li><li>若目录项就是完整 FCB（如 FAT 文件系统）：每级读入目录项本身即可。</li><li>文件已打开后再读写 → <strong>不再检索目录</strong>，直接用内存中的打开文件表。</li></ol>
+<p><strong>坑</strong>：题目常要求分开报「读目录几次 / 读索引结点几次」，必须按题设的数据结构拆开数，不能笼统说「几次」。</p>
+<hr>
+<h2 id="sec-10">2. 四种物理结构速判表（选择题命中区）</h2>
+<div class="tr-list"><div class="tr-card"><div class="tr-title">连续分配</div><div class="tr-row"><div class="tr-k">随机访问</div><div class="tr-v">✅ 不需额外 I/O</div></div><div class="tr-row"><div class="tr-k">外部碎片</div><div class="tr-v">✅ <strong>有</strong>（需紧凑）</div></div><div class="tr-row"><div class="tr-k">文件动态增长</div><div class="tr-v">❌ 困难</div></div><div class="tr-row"><div class="tr-k">目录项内容</div><div class="tr-v">起始块号 + 长度</div></div><div class="tr-row"><div class="tr-k">主要代价</div><div class="tr-v">预留空间、紧凑开销</div></div></div><div class="tr-card"><div class="tr-title">隐式链接</div><div class="tr-row"><div class="tr-k">随机访问</div><div class="tr-v">❌ 必须逐块走</div></div><div class="tr-row"><div class="tr-k">外部碎片</div><div class="tr-v">❌ 无</div></div><div class="tr-row"><div class="tr-k">文件动态增长</div><div class="tr-v">✅ 容易</div></div><div class="tr-row"><div class="tr-k">目录项内容</div><div class="tr-v">起始块号 + 结束块号</div></div><div class="tr-row"><div class="tr-k">主要代价</div><div class="tr-v">指针占空间、链断全丢</div></div></div><div class="tr-card"><div class="tr-title">显式链接（FAT）</div><div class="tr-row"><div class="tr-k">随机访问</div><div class="tr-v">✅ 链在内存 FAT 中走</div></div><div class="tr-row"><div class="tr-k">外部碎片</div><div class="tr-v">❌ 无</div></div><div class="tr-row"><div class="tr-k">文件动态增长</div><div class="tr-v">✅ 容易</div></div><div class="tr-row"><div class="tr-k">目录项内容</div><div class="tr-v"><strong>只需起始块号</strong></div></div><div class="tr-row"><div class="tr-k">主要代价</div><div class="tr-v">FAT 占大量内存</div></div></div><div class="tr-card"><div class="tr-title">索引分配</div><div class="tr-row"><div class="tr-k">随机访问</div><div class="tr-v">✅ 查索引块第 i 项</div></div><div class="tr-row"><div class="tr-k">外部碎片</div><div class="tr-v">❌ 无</div></div><div class="tr-row"><div class="tr-k">文件动态增长</div><div class="tr-v">✅ 容易</div></div><div class="tr-row"><div class="tr-k">目录项内容</div><div class="tr-v">索引块号</div></div><div class="tr-row"><div class="tr-k">主要代价</div><div class="tr-v">索引块占空间、小文件浪费</div></div></div></div>
+<p><strong>两条判定口诀</strong>：</p>
+<ol><li><strong>能随机访问 ⇔ 不用「顺着链读盘」就能算出第 i 块的块号。</strong></li><li><strong>有外部碎片 ⇔ 要求连续空间 ⇔ 只有连续分配。</strong></li></ol>
+<p><strong>选择依据（简答题用）</strong>：</p>
+<ul><li>频繁随机访问 + 大小基本固定（系统文件）→ <strong>连续分配</strong></li><li>大小变化大 + 顺序读写（日志）→ <strong>隐式链接</strong></li><li>要随机访问 + 要动态增长 + 小磁盘（FAT32）→ <strong>显式链接</strong></li><li>通用大容量（Linux ext 系列）→ <strong>混合索引</strong></li></ul>
+<hr>
+<h2 id="sec-11">3. 成组链接法（唯一需要背流程的）</h2>
+<p><strong>为什么有它</strong>：空闲块太多 → 空闲表太大；空闲链表又太长。所以「分组 + 链接」。</p>
+<p><strong>结构</strong>：</p>
+<ul><li>空闲块分若干组（如每组 100 块）</li><li>每组<strong>第一块</strong>存放组内其余空闲块的块号 + 指向下一组的指针</li><li>各组从后向前链</li><li><strong>超级块</strong>保存「当前可分配组的块号 + 组内空闲块数」</li></ul>
+<p><strong>分配（重点：取走组内最后一块）</strong>：</p>
+<ol><li>从当前组取一个空闲块 → 组内空闲块数 −1</li><li><strong>当取到组内最后一块时</strong>：该块本身存着指向下一组的信息 → <strong>先把下一组的块号信息读入超级块</strong> → <strong>再把这块分配出去</strong></li><li>于是超级块切换到新的当前组</li></ol>
+<blockquote>⚠️ 顺序不能反：漏了「先读下一组」这一步，链就断了。</blockquote>
+<p><strong>回收（重点：满组时的顺序）</strong>：</p>
+<ol><li>把释放的盘块号直接登入超级块代表的当前组（<strong>只是内存操作，不写盘</strong>）→ 组内计数 +1</li><li><strong>若当前组已满</strong>（如已 100 块）：<strong>先把超级块中的整组信息写入这块新释放的块</strong> → <strong>再把这个新块的块号放入超级块</strong>，使它成为新的当前组首块</li></ol>
+<blockquote>⚠️ 顺序不能反：满组信息必须<strong>先</strong>写进新块，新块<strong>才能</strong>充当下一组的「组长」。若先当首块再写，会把组长自己的块号覆盖掉。</blockquote>
+<p><strong>核心优点</strong>：只有超级块那一组常驻内存，其余按需调入 → 省内存 + 便于查找。</p>
+<hr>
+<h2 id="sec-12">4. 概念辨析（选择题陷阱清单）</h2>
+<h3 id="sec-13">4.1 打开文件表三张结构</h3>
+<div class="table-wrap"><table><thead><tr><th>结构</th><th>位置</th><th>数量</th><th>存什么</th></tr></thead><tbody><tr><td data-label="结构"><strong>目录项 / FCB</strong></td><td data-label="位置">外存</td><td data-label="数量">每文件一个</td><td data-label="存什么">文件名、属性、物理地址（<strong>真身</strong>）</td></tr><tr><td data-label="结构"><strong>系统打开文件表</strong></td><td data-label="位置">内存</td><td data-label="数量"><strong>全系统一张</strong></td><td data-label="存什么">FCB 副本、<strong>打开计数器</strong>、访问模式</td></tr><tr><td data-label="结构"><strong>进程打开文件表</strong></td><td data-label="位置">内存</td><td data-label="数量"><strong>每进程一张</strong></td><td data-label="存什么">fd → 系统表项指针、本进程读写位置</td></tr></tbody></table></div>
+<p><strong>打开流程（口诀：先找文件、再登记、最后发号）</strong>：</p>
+<ol><li>按文件名逐级检索目录找到 FCB（<strong>目录检索只在此刻做一次</strong>）</li><li>查系统表：已有 → 计数 +1；没有 → 调入 FCB 新建表项，计数 = 1</li><li>在进程表分配空表项，填指针 + 读写位置</li><li>返回 <strong>fd</strong>（= 进程表表项的索引号）</li></ol>
+<p><strong>关闭流程</strong>：删进程表项 → 系统表计数 −1 → <strong>减为 0 才</strong>写回 FCB 并删系统表项</p>
+<p><strong>四个高频错点</strong>：</p>
+<ol><li><strong>fd 是局部唯一的</strong>，不是系统全局编号。不同进程打开同一文件，fd 可以不同。</li><li><strong>同一进程两次打开同一文件 → 得到两个不同的 fd</strong>（产生两个进程表项）。</li><li><strong>「打开」不读文件内容</strong>，只把 FCB 调入内存。读/写才真正传送数据。</li><li><strong>关闭不等于立刻写回磁盘</strong>，要等计数归零。</li></ol>
+<h3 id="sec-14">4.2 硬链接 vs 软链接</h3>
+<div class="mini-list"><div class="mini"><div class="mini__k">本质</div><div class="mini__v">多个目录项指向<strong>同一个索引结点</strong><span class="mini__sep">·</span>新建一个<strong>只存路径名</strong>的 LINK 类型文件</div></div><div class="mini"><div class="mini__k">计数</div><div class="mini__v">inode 里 count++，删除时 count−−<span class="mini__sep">·</span>无计数</div></div><div class="mini"><div class="mini__k">跨文件系统</div><div class="mini__v">❌ 不行<span class="mini__sep">·</span>✅ 可以</div></div><div class="mini"><div class="mini__k">对目录建链</div><div class="mini__v">❌ 不行（防成环）<span class="mini__sep">·</span>✅ 可以</div></div><div class="mini"><div class="mini__k">原文件删除后</div><div class="mini__v">✅ 内容仍可通过其他链接访问<span class="mini__sep">·</span>❌ 链接还在但失效（悬空链接）</div></div><div class="mini"><div class="mini__k">访问开销</div><div class="mini__v">与普通文件相同<span class="mini__sep">·</span><strong>多读一次链接文件</strong></div></div></div>
+<blockquote>速记：<strong>硬链接 = 多名字共享同一 inode；软链接 = 一个只存路径的小文件。</strong></blockquote>
+<h3 id="sec-15">4.3 逻辑结构三种</h3>
+<div class="mini-list"><div class="mini"><div class="mini__k"><strong>无结构（流式）</strong></div><div class="mini__v">字符流、不划分记录、按字节计长、顺序访问<span class="mini__sep">·</span>源程序 / 目标代码 / 可执行文件</div></div><div class="mini"><div class="mini__k"><strong>顺序文件</strong></div><div class="mini__v">按记录顺序存放，批量存取效率最高<span class="mini__sep">·</span><strong>批量快、单条慢</strong>、增删困难</div></div><div class="mini"><div class="mini__k"><strong>索引文件</strong></div><div class="mini__v">为变长记录建索引表，每记录一项<span class="mini__sep">·</span><strong>可随机、但索引表占空间</strong></div></div><div class="mini"><div class="mini__k"><strong>索引顺序文件</strong></div><div class="mini__v">顺序文件分组，<strong>每组第一条</strong>建索引项<span class="mini__sep">·</span>索引项<strong>每组一个</strong>，不是每记录一个</div></div></div>
+<blockquote>⚠️ 最常错：<strong>索引顺序文件的索引项是「每组一个」，索引文件才是「每记录一个」。</strong></blockquote>
+<h3 id="sec-16">4.4 目录结构</h3>
+<div class="mini-list"><div class="mini"><div class="mini__k"><strong>单级</strong></div><div class="mini__v">简单，可按名存取<span class="mini__sep">·</span>不许重名、文件数受限、查找慢</div></div><div class="mini"><div class="mini__k"><strong>两级</strong></div><div class="mini__v">不同用户可重名、检索快、有访问控制<span class="mini__sep">·</span>不灵活、<strong>不能共享</strong></div></div><div class="mini"><div class="mini__k"><strong>树形</strong></div><div class="mini__v">分类管理、不同目录可重名、可设权限<span class="mini__sep">·</span><strong>不便共享</strong>（一个文件只能一个父目录）</div></div><div class="mini"><div class="mini__k"><strong>无环图</strong></div><div class="mini__v"><strong>可共享</strong>（多目录项指向同一文件）<span class="mini__sep">·</span>需共享计数器，删到 0 才真删；管理复杂</div></div></div>
+<h3 id="sec-17">4.5 文件保护三法</h3>
+<div class="mini-list"><div class="mini"><div class="mini__k"><strong>口令</strong></div><div class="mini__v">内容机密<span class="mini__sep">·</span>口令存系统内部，不够安全</div></div><div class="mini"><div class="mini__k"><strong>加密</strong></div><div class="mini__v">内容机密<span class="mini__sep">·</span>密钥管理麻烦</div></div><div class="mini"><div class="mini__k"><strong>访问控制（ACL）</strong></div><div class="mini__v"><strong>操作权限</strong><span class="mini__sep">·</span>表可能很大</div></div></div>
+<blockquote>口诀：<strong>口令/加密保护「内容机密」，访问控制保护「操作权限」。</strong></blockquote>
+<h3 id="sec-18">4.6 文件系统分层（自下而上，必背顺序）</h3>
+<pre class="code"><code>I/O 控制层  →  基本文件系统层  →  文件组织模块层  →  逻辑文件系统层</code></pre>
+<div class="mini-list"><div class="mini"><div class="mini__k">I/O 控制层</div><div class="mini__v">设备驱动 + 中断处理，与硬件交互</div></div><div class="mini"><div class="mini__k">基本文件系统层</div><div class="mini__v">向驱动发通用命令，读写<strong>物理块</strong>（不关心内容）</div></div><div class="mini"><div class="mini__k">文件组织模块层</div><div class="mini__v"><strong>逻辑块 → 物理块</strong>映射、空闲空间管理</div></div><div class="mini"><div class="mini__k">逻辑文件系统层</div><div class="mini__v"><strong>元数据（FCB/目录）</strong>、按名存取、权限检查、用户接口</div></div></div>
+<blockquote>记忆：<strong>逻辑层管名字与权限，组织层管逻辑块到物理块，基本层管物理块读写，I/O 层管硬件。</strong></blockquote>
+<h3 id="sec-19">4.7 磁盘布局（按序）</h3>
+<pre class="code"><code>引导块 → 超级块 → 目录结构 → FCB（索引结点）区 → 数据区</code></pre>
+<ul><li><strong>引导块</strong>：分区第一个块，<strong>不属于文件系统本身</strong></li><li><strong>超级块</strong>：分区大小、空闲块数与指针、空闲 FCB 数与指针；<strong>挂载时才读入内存</strong></li></ul>
+<hr>
+<h2 id="sec-20">5. 空闲空间管理四种方法</h2>
+<div class="table-wrap"><table><thead><tr><th>方法</th><th>原理</th><th>适用</th><th>缺点</th></tr></thead><tbody><tr><td data-label="方法"><strong>空闲表</strong></td><td data-label="原理">每个空闲区一项：序号 + 首块号 + 块数</td><td data-label="适用"><strong>连续分配</strong></td><td data-label="缺点">空闲区多时表很长</td></tr><tr><td data-label="方法"><strong>空闲链表（盘块链）</strong></td><td data-label="原理">空闲块逐块拉链</td><td data-label="适用">简单</td><td data-label="缺点">逐个摘取，工作量大</td></tr><tr><td data-label="方法"><strong>空闲链表（盘区链）</strong></td><td data-label="原理">以「连续空闲区」为单位拉链</td><td data-label="适用">较高效</td><td data-label="缺点">回收需合并相邻盘区</td></tr><tr><td data-label="方法"><strong>位示图</strong></td><td data-label="原理">1 bit / 块，0 空闲 1 已用</td><td data-label="适用">中小型 FS</td><td data-label="缺点">顺序扫描找空闲位</td></tr><tr><td data-label="方法"><strong>成组链接</strong></td><td data-label="原理">分组 + 链 + 超级块</td><td data-label="适用"><strong>超大 FS（UNIX）</strong></td><td data-label="缺点">结构复杂</td></tr></tbody></table></div>
+<p><strong>选型口诀</strong>：<strong>小块数看位示图，大容量看成组链接，连续分配配空闲表。</strong></p>
+<hr>
+<h2 id="sec-21">6. 一次完整寻址（综合题模板）</h2>
+<p>题目：「读文件偏移 off 处的内容，共需几次访盘？」</p>
+<pre class="code"><code>① i = ⌊off / B⌋，d = off mod B
+② 由目录（或其缓存）找到该文件的索引结点 FCB
+③ 按 i 落在直接/一级/二级/三级区，选路径得物理块号 b
+    额外读盘：直接 0 次、一级 1 次、二级 2 次、三级 3 次
+④ 按 b 读出整个盘块（1 次磁盘访问），取出 [d, d+长度) 的数据
+⑤ 若跨多个盘块，对 i, i+1, … 重复 ③④</code></pre>
+<blockquote>⚠️ 「访问第 i 块几次访盘」= 索引块读取次数 + <strong>数据块 1 次</strong>。题设若说「索引块已在内存」，才只计数据块。</blockquote>
+<hr>
+<h2 id="sec-22">7. 自测清单（过完一遍，逐条自问）</h2>
+<p><strong>计算类</strong></p>
+<label class="check"><input type="checkbox"><span>给「块大小 1KB、地址 4B」，能立刻说出 K = 256（不是 1024）</span></label>
+<label class="check"><input type="checkbox"><span>给「10 直接 + 三级间接、4KB 块」，能算出最大文件约 4TB+4GB+4MB+40KB</span></label>
+<label class="check"><input type="checkbox"><span>给「逻辑块号 5000」，能判断它落在二级间接区，并说出至少读 3 次盘</span></label>
+<label class="check"><input type="checkbox"><span>给「字长 16 位、盘块号 100」，能立刻说出字号 6、位号 4</span></label>
+<label class="check"><input type="checkbox"><span>给「行 5 列 3、字长 16」，能反算出块号 66</span></label>
+<label class="check"><input type="checkbox"><span>给「磁盘 1GB、块 4KB」，能算出 FAT 表项数 = 262144</span></label>
+<p><strong>辨析类</strong></p>
+<label class="check"><input type="checkbox"><span>能说出 FAT 管「已用」、位示图管「空闲」</span></label>
+<label class="check"><input type="checkbox"><span>能说出 FAT 是全局一张表、索引分配是每文件一块表</span></label>
+<label class="check"><input type="checkbox"><span>能说出「随机访问 ≠ 零 I/O」</span></label>
+<label class="check"><input type="checkbox"><span>能说出连续分配有<strong>外部</strong>碎片、没有内部碎片</span></label>
+<label class="check"><input type="checkbox"><span>能说出隐式链接<strong>不支持</strong>随机访问</span></label>
+<label class="check"><input type="checkbox"><span>能说出索引顺序文件的索引项是<strong>每组一个</strong></span></label>
+<label class="check"><input type="checkbox"><span>能说出 fd 是<strong>局部唯一</strong>、同进程两次打开同一文件得到<strong>两个</strong> fd</span></label>
+<label class="check"><input type="checkbox"><span>能说出硬链接<strong>不能</strong>跨文件系统、<strong>不能</strong>对目录建</span></label>
+<label class="check"><input type="checkbox"><span>能说出「打开」只调 FCB 进内存，<strong>不读内容</strong></span></label>
+<label class="check"><input type="checkbox"><span>能说出文件系统四层自下而上的顺序</span></label>
+<p><strong>流程类</strong></p>
+<label class="check"><input type="checkbox"><span>能背出成组链接法「取走最后一块」的处理顺序</span></label>
+<label class="check"><input type="checkbox"><span>能背出成组链接法「回收时组已满」的处理顺序（先写满组、后作首块）</span></label>
+<hr>
+<h2 id="sec-23">8. 已知未覆盖（别在这里找）</h2>
+<ul><li><strong>书页码</strong>：本章资料 OCR 缺页，所有条目的 <code>source</code> 均为「考纲通用考点（OCR 缺页，页码待核）」。本卡<strong>不写书页号</strong>，避免编造。</li><li><strong>真题题号</strong>：原始资料未标注真题年份题号，本卡<strong>不写「20XX 年第 X 题」</strong>。如需真题对照，另起一轮用真题原文核。</li><li><strong>VFS / 挂载</strong>：属<strong>考纲外补充</strong>，选择题偶尔作为背景出现，不必深挖。</li></ul>
+</main>
+
+<button id="toc-btn" type="button" aria-label="打开目录">☰</button>
+<button id="top-btn" type="button" aria-label="回到顶部">↑</button>
+
+<div id="toc" role="dialog" aria-modal="true" aria-label="目录">
+  <div id="toc__panel">
+    <button id="toc__close" type="button" aria-label="关闭目录">✕</button>
+    <h5>目录</h5>
+    <a class="toc__item toc__item--l1" href="#sec-1">考点卡 · 第 4 章 文件管理（做题导向版）</a><a class="toc__item toc__item--l2" href="#sec-2">0. 考场速查（考前 10 分钟只看这一页）</a><a class="toc__item toc__item--l2" href="#sec-3">1. 五大计算题型（80% 的题都在这）</a><a class="toc__item toc__item--l3" href="#sec-4">题型 A：逻辑块号 → 物理块号（连续分配）</a><a class="toc__item toc__item--l3" href="#sec-5">题型 B：索引容量与最大文件长度</a><a class="toc__item toc__item--l3" href="#sec-6">题型 C：混合索引（UNIX 风格）★ 最高频</a><a class="toc__item toc__item--l3" href="#sec-7">题型 D：位示图换算 ★ 最高频</a><a class="toc__item toc__item--l3" href="#sec-8">题型 E：FAT 大小与 FAT 链</a><a class="toc__item toc__item--l3" href="#sec-9">题型 F：目录检索的 I/O 次数</a><a class="toc__item toc__item--l2" href="#sec-10">2. 四种物理结构速判表（选择题命中区）</a><a class="toc__item toc__item--l2" href="#sec-11">3. 成组链接法（唯一需要背流程的）</a><a class="toc__item toc__item--l2" href="#sec-12">4. 概念辨析（选择题陷阱清单）</a><a class="toc__item toc__item--l3" href="#sec-13">4.1 打开文件表三张结构</a><a class="toc__item toc__item--l3" href="#sec-14">4.2 硬链接 vs 软链接</a><a class="toc__item toc__item--l3" href="#sec-15">4.3 逻辑结构三种</a><a class="toc__item toc__item--l3" href="#sec-16">4.4 目录结构</a><a class="toc__item toc__item--l3" href="#sec-17">4.5 文件保护三法</a><a class="toc__item toc__item--l3" href="#sec-18">4.6 文件系统分层（自下而上，必背顺序）</a><a class="toc__item toc__item--l3" href="#sec-19">4.7 磁盘布局（按序）</a><a class="toc__item toc__item--l2" href="#sec-20">5. 空闲空间管理四种方法</a><a class="toc__item toc__item--l2" href="#sec-21">6. 一次完整寻址（综合题模板）</a><a class="toc__item toc__item--l2" href="#sec-22">7. 自测清单（过完一遍，逐条自问）</a><a class="toc__item toc__item--l2" href="#sec-23">8. 已知未覆盖（别在这里找）</a>
+  </div>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('bar');
+  var topBtn=document.getElementById('top-btn');
+  var toc=document.getElementById('toc');
+  var tocBtn=document.getElementById('toc-btn');
+  var tocClose=document.getElementById('toc__close');
+
+  // 阅读进度 + 回到顶部按钮
+  function onScroll(){
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    var y=window.scrollY||document.documentElement.scrollTop;
+    bar.style.width=(h>0?(y/h*100):0)+'%';
+    topBtn.classList.toggle('show',y>600);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});
+  onScroll();
+
+  // 目录开合
+  function openToc(){toc.classList.add('open');}
+  function closeToc(){toc.classList.remove('open');}
+  tocBtn.addEventListener('click',openToc);
+  tocClose.addEventListener('click',closeToc);
+  toc.addEventListener('click',function(e){ if(e.target===toc) closeToc(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeToc(); });
+
+  // 点目录跳转后关闭
+  toc.querySelectorAll('.toc__item').forEach(function(a){
+    a.addEventListener('click',function(){
+      closeToc();
+      var id=a.getAttribute('href').slice(1);
+      var el=document.getElementById(id);
+      if(el){ setTimeout(function(){ el.scrollIntoView({block:'start'}); },60); }
+    });
+  });
+
+  topBtn.addEventListener('click',function(){
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+
+  // 自测清单勾选状态存本地
+  var KEY='408-cards-check:'+location.pathname;
+  var boxes=document.querySelectorAll('.check input');
+  var saved={};
+  try{ saved=JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){}
+  boxes.forEach(function(b,idx){
+    if(saved[idx]) b.checked=true;
+    b.addEventListener('change',function(){
+      saved[idx]=b.checked;
+      try{ localStorage.setItem(KEY,JSON.stringify(saved)); }catch(e){}
+    });
+  });
+})();
+</script>
+</body>
+</html>
