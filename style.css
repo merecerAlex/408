@@ -732,8 +732,7 @@ mark.hl {
   transform-style: preserve-3d;
   transition: transform .55s cubic-bezier(.2, .7, .2, 1);
 }
-/* 翻转：由 JS 切换 is-flipped */
-.flipcard.is-flipped .flipcard__inner { transform: rotateY(180deg); }
+/* 翻面不再用 3D 旋转：背面高度随答案自适应，走 is-flipped 的淡入展开（见上方规则） */
 
 .flipcard__face {
   position: absolute;
@@ -970,7 +969,7 @@ mark.hl {
 
 /* 卡面切换时的轻微抬起反馈 */
 .flipcard:active .flipcard__inner { transform: scale(.995); }
-.flipcard.is-flipped:active .flipcard__inner { transform: rotateY(180deg) scale(.995); }
+.flipcard.is-flipped:active .flipcard__inner { transform: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .flipcard__inner { transition: none; }
@@ -984,9 +983,7 @@ html.no-flip .flipcard__face {
   -webkit-backface-visibility: visible;
   transition: opacity .2s ease;
 }
-html.no-flip .flipcard__face--back { transform: none; opacity: 0; }
-html.no-flip .flipcard.is-flipped .flipcard__face--front { opacity: 0; }
-html.no-flip .flipcard.is-flipped .flipcard__face--back { opacity: 1; }
+html.no-flip .flipcard__face--back { transform: none; }
 html.no-flip .flipcard:active .flipcard__inner,
 html.no-flip .flipcard.is-flipped:active .flipcard__inner { transform: none !important; }
 
