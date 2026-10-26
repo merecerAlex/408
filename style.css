@@ -320,6 +320,26 @@ code { font-family: var(--mono); font-size: .92em; }
 .chip--l2.is-active { background: var(--l2-bg); color: var(--l2-fg); border-color: var(--l2-line); }
 .chip--l3.is-active { background: var(--l3-bg); color: var(--l3-fg); border-color: var(--l3-line); }
 
+/* 科目 chips：比分级 chips 更「重」，因为它是整页范围的切换 */
+.chips--subject {
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+}
+.chips--subject .chip {
+  font-size: 13px;
+  font-weight: 700;
+  min-height: 36px;
+  padding: 6px 13px;
+  background: var(--bg);
+  border-style: dashed;
+}
+.chips--subject .chip.is-active {
+  background: var(--accent, #2f6fed);
+  color: #fff;
+  border-color: var(--accent, #2f6fed);
+  border-style: solid;
+}
+
 .viewtabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -975,7 +995,9 @@ mark.hl {
   .flipcard__inner { transition: none; }
 }
 
-/* 低端设备降级：不用 3D 旋转，改为淡入淡出（由 app.js 视设备性能加 .no-flip） */
+/* 低端设备降级：不用 3D 旋转，改为淡入淡出（由 app.js 视设备性能加 .no-flip）
+   ⚠ 这里必须自己管住正/背面的显隐：一旦 backface-visibility 放开、背面 transform 归零，
+   背面就会平铺盖在正面上（曾导致「只看到答案面、点翻转没反应」）。 */
 html.no-flip .flipcard { perspective: none; }
 html.no-flip .flipcard__inner { transform: none !important; transform-style: flat; }
 html.no-flip .flipcard__face {
@@ -983,7 +1005,23 @@ html.no-flip .flipcard__face {
   -webkit-backface-visibility: visible;
   transition: opacity .2s ease;
 }
-html.no-flip .flipcard__face--back { transform: none; }
+/* 未翻转：背面彻底不可见、不可点 */
+html.no-flip .flipcard__face--back {
+  transform: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+/* 已翻转：正面让位，背面显形 */
+html.no-flip .flipcard.is-flipped .flipcard__face--front {
+  opacity: 0;
+  visibility: hidden;
+}
+html.no-flip .flipcard.is-flipped .flipcard__face--back {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
 html.no-flip .flipcard:active .flipcard__inner,
 html.no-flip .flipcard.is-flipped:active .flipcard__inner { transform: none !important; }
 

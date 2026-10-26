@@ -15,7 +15,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="style.css?v=20261025c">
+  <link rel="stylesheet" href="style.css?v=20261026a">
 </head>
 <body>
   <!-- 无障碍：跳转到主内容 -->
@@ -49,6 +49,9 @@
 
     <!-- 分级标签筛选 + 视图切换 -->
     <div class="toolbar">
+      <div class="chips chips--subject" id="subject-chips" role="group" aria-label="按科目筛选">
+        <button class="chip chip--subject is-active" type="button" data-subject="all">全部科目</button>
+      </div>
       <div class="chips" id="level-chips" role="group" aria-label="按分级标签筛选">
         <button class="chip chip--all is-active" type="button" data-level="all">全部</button>
         <button class="chip chip--l1" type="button" data-level="l1">🔴 必背原话</button>
@@ -268,6 +271,6 @@
     <p style="padding:16px">本页面需要启用 JavaScript 才能渲染考点数据。</p>
   </noscript>
 
-  <script src="app.js?v=20261025c" defer></script>
+  <script src="app.js?v=20261026a" defer></script>
 </body>
 </html>

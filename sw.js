@@ -9,7 +9,7 @@
    ========================================================= */
 'use strict';
 
-const CACHE_VERSION = 'os408-v5';
+const CACHE_VERSION = 'os408-v6';
 const CACHE_NAME = `os408-${CACHE_VERSION}`;
 
 // 相对路径：支持部署在子目录（如 http://ip:8000/）

@@ -31,6 +31,7 @@
     tree: [],           // 目录树（来自 chapters.json）
     query: '',          // 搜索词
     level: 'all',       // 分级筛选：all | l1 | l2 | l3
+    subject: 'all',     // 科目筛选：all | os | net
     view: 'list',       // list | card | cards | mastery
     openPanels: new Set(), // 列表里已展开的章节 key
     openSections: new Set(), // 列表里已展开的节 key（节级折叠）
@@ -71,6 +72,7 @@
     search: $('search'),
     clearBtn: $('btn-clear'),
     levelChips: $('level-chips'),
+    subjectChips: $('subject-chips'),
     viewTabs: document.querySelectorAll('.viewtab'),
     viewList: $('view-list'),
     viewCard: $('view-card'),
@@ -383,16 +385,20 @@
    * ⚠️ 兜底候选必须覆盖实际用到的命名（ch3_3_1.json 这种带下划线的也常见）。
    *    候选清单只是「无 index 时」的降级方案；正式做法是在 _parts 下放一个 index.json。
    */
+  // 无 data/_parts/index.json 时的兜底清单。
+  // ⚠ 必须与 data/_parts/ 里真实存在的文件一一对应：多写一个占位符，
+  //    每次启动控制台就多一条 404（旧版列了 ch6–ch9 等 12 个不存在的文件）。
   const PART_URLS = [
-    // 无 index 时的兜底猜测（多层命名都试一遍，404 会被静默忽略）
     'data/_parts/ch1ch2.json',
-    'data/_parts/ch1.json', 'data/_parts/ch2.json', 'data/_parts/ch3.json',
-    'data/_parts/ch4.json', 'data/_parts/ch5.json', 'data/_parts/ch6.json',
-    'data/_parts/ch7.json', 'data/_parts/ch8.json', 'data/_parts/ch9.json',
-    'data/_parts/ch1_2.json', 'data/_parts/ch3_1.json', 'data/_parts/ch3_2.json',
-    'data/_parts/ch3_3.json', 'data/_parts/ch3_3_1.json', 'data/_parts/ch3_3_2.json',
-    'data/_parts/ch4_1.json', 'data/_parts/ch4_2.json', 'data/_parts/ch4_3.json', 'data/_parts/ch4_4.json',
-    'data/_parts/ch5_1.json', 'data/_parts/ch5_2.json', 'data/_parts/ch5_3.json',
+    'data/_parts/ch3.json',
+    'data/_parts/ch3_3_1.json',
+    'data/_parts/ch3_3_2.json',
+    'data/_parts/ch3_3_3.json',
+    'data/_parts/ch4.json',
+    'data/_parts/ch5.json',
+    // —— 计算机网络（subject: net）——
+    'data/_parts/net_ch1.json',
+    'data/_parts/net_ch2.json',
   ];
 
   async function loadPartIndex() {
@@ -429,6 +435,7 @@
     const chapter = normalize(raw.chapter) || (idMatch ? `第${idMatch[1]}章` : '未分类');
     return {
       id: normalize(raw.id),
+      subject: normalize(raw.subject) || subjectOfId(raw.id),
       chapter,
       section: normalize(raw.section),
       topic: normalize(raw.topic || raw.title),
@@ -440,6 +447,34 @@
       status: normalize(raw.status),
       fromPart: normalize(raw.__fromPart),
     };
+  }
+
+  /**
+   * 科目 id → 中文名。老数据没有 subject 字段时，从 id 前缀兜底：
+   *   os-ch5-…  → os；net-ch1-… → net；其余归 os（历史数据全是操作系统）。
+   */
+  const SUBJECTS = [
+    { id: 'os', name: '操作系统', icon: '🖥️' },
+    { id: 'net', name: '计算机网络', icon: '🌐' },
+  ];
+  const SUBJECT_MAP = new Map(SUBJECTS.map((s) => [s.id, s]));
+
+  function subjectOfId(id) {
+    const s = normalize(id);
+    if (/^net-/i.test(s)) return 'net';
+    if (/^os-/i.test(s)) return 'os';
+    return 'os';
+  }
+
+  function subjectName(id) {
+    const s = SUBJECT_MAP.get(id);
+    return s ? s.name : id;
+  }
+
+  /** 数据里实际出现过哪些科目（按 SUBJECTS 顺序，只留有条目的） */
+  function activeSubjects() {
+    const seen = new Set(state.items.map((it) => it.subject));
+    return SUBJECTS.filter((s) => seen.has(s.id));
   }
 
   /** 合并：final 优先，同级后者覆盖前者 */
@@ -481,8 +516,11 @@
   function buildTree(items) {
     const chapters = new Map();
     for (const it of items) {
-      const chKey = it.chapter || '未分类';
-      if (!chapters.has(chKey)) chapters.set(chKey, { chapter: chKey, sections: new Map() });
+      const subj = it.subject || 'os';
+      const chName = it.chapter || '未分类';
+      // 章的唯一键必须带科目：操作系统第1章 和 计网第1章 是两个不同的章
+      const chKey = subj + '\u0000' + chName;
+      if (!chapters.has(chKey)) chapters.set(chKey, { chapter: chName, subject: subj, sections: new Map() });
       const ch = chapters.get(chKey);
       const secKey = it.section || '未分节';
       if (!ch.sections.has(secKey)) ch.sections.set(secKey, { section: secKey, topicIds: [] });
@@ -492,9 +530,14 @@
       const m = /(\d+)\s*$/.exec(id || '');
       return m ? Number(m[1]) : 9999;
     };
+    const subjOrder = (id) => {
+      const i = SUBJECTS.findIndex((s) => s.id === id);
+      return i < 0 ? 99 : i;
+    };
     return Array.from(chapters.values())
       .map((ch) => ({
         chapter: ch.chapter,
+        subject: ch.subject,
         sections: Array.from(ch.sections.values())
           .map((s) => ({
             section: s.section,
@@ -503,10 +546,12 @@
           .sort((a, b) => sectionNumber(a.section) - sectionNumber(b.section)
             || String(a.section).localeCompare(String(b.section), 'zh')),
         chapterNum: chapterNumber(ch.chapter),
+        subjOrder: subjOrder(ch.subject),
       }))
-      .sort((a, b) => a.chapterNum - b.chapterNum
+      .sort((a, b) => a.subjOrder - b.subjOrder
+        || a.chapterNum - b.chapterNum
         || String(a.chapter).localeCompare(String(b.chapter), 'zh'))
-      .map((c) => ({ chapter: c.chapter, sections: c.sections }));
+      .map((c) => ({ chapter: c.chapter, subject: c.subject, sections: c.sections }));
   }
 
   /* ---------------- 章节考向与分值（可选数据） ----------------
@@ -725,6 +770,7 @@
     el.error.style.display = 'none';
     renderBrandSub();
     renderChapterSelect();
+    renderSubjectChips();
     // 考点卡数据（可选）：失败不影响主流程，只是「考点卡」页空着
     try {
       await loadCardsData();
@@ -740,22 +786,31 @@
     const listed = new Set();
     explicit.forEach((c) => c.sections.forEach((s) => s.topicIds.forEach((id) => listed.add(id))));
 
+    // 显式目录（chapters.json）是早期手写的，没有 subject 字段。
+    // 从自动树里反查每个章名属于哪个科目；查不到再退回 os。
+    const subjByChapter = new Map();
+    auto.forEach((ac) => subjByChapter.set(ac.chapter, ac.subject || 'os'));
+    const subjOf = (name) => subjByChapter.get(name) || 'os';
+
     const out = explicit.map((c) => ({
       chapter: c.chapter,
+      subject: c.subject || subjOf(c.chapter),
       sections: c.sections.map((s) => ({ section: s.section, topicIds: s.topicIds.slice() })),
     }));
-    const chMap = new Map(out.map((c) => [c.chapter, c]));
+    // 键必须带科目，否则 OS 第1章会吃掉计网第1章
+    const chMap = new Map(out.map((c) => [c.subject + '\u0000' + c.chapter, c]));
 
     auto.forEach((ac) => {
       ac.sections.forEach((as) => {
         const missing = as.topicIds.filter((id) => !listed.has(id));
         if (!missing.length) return;
         missing.forEach((id) => listed.add(id));
-        let target = chMap.get(ac.chapter);
+        const key = (ac.subject || 'os') + '\u0000' + ac.chapter;
+        let target = chMap.get(key);
         if (!target) {
-          target = { chapter: ac.chapter, sections: [] };
+          target = { chapter: ac.chapter, subject: ac.subject || 'os', sections: [] };
           out.push(target);
-          chMap.set(ac.chapter, target);
+          chMap.set(key, target);
         }
         const sec = target.sections.find((s) => s.section === as.section);
         if (sec) sec.topicIds = sec.topicIds.concat(missing);
@@ -769,7 +824,12 @@
       c.sections.sort((a, b) => sectionNumber(a.section) - sectionNumber(b.section)
         || String(a.section).localeCompare(String(b.section), 'zh'));
     });
-    out.sort((a, b) => chapterNumber(a.chapter) - chapterNumber(b.chapter)
+    const subjOrder = (id) => {
+      const i = SUBJECTS.findIndex((s) => s.id === id);
+      return i < 0 ? 99 : i;
+    };
+    out.sort((a, b) => subjOrder(a.subject) - subjOrder(b.subject)
+      || chapterNumber(a.chapter) - chapterNumber(b.chapter)
       || String(a.chapter).localeCompare(String(b.chapter), 'zh'));
     return out;
   }
@@ -778,7 +838,9 @@
   function renderBrandSub() {
     const total = state.items.length;
     const c = countByLevel();
-    el.brandSub.textContent = `${total} 个考点 · 🔴${c.l1} 🔵${c.l2} ⚪${c.l3}`;
+    const subs = activeSubjects();
+    const subTxt = subs.length > 1 ? `${subs.map((s) => s.name).join(' + ')} · ` : '';
+    el.brandSub.textContent = `${subTxt}${total} 个考点 · 🔴${c.l1} 🔵${c.l2} ⚪${c.l3}`;
   }
 
   function countByLevel() {
@@ -826,11 +888,17 @@
     return state.cardsData;
   }
 
+  /** 当前科目下的考点卡章（cards.json 里带 subject） */
+  function cardsChapters() {
+    const data = state.cardsData || { chapters: [] };
+    const all = data.chapters || [];
+    return state.subject === 'all' ? all : all.filter((c) => (c.subject || 'os') === state.subject);
+  }
+
   function renderCardsDocSelect() {
     if (!el.cardsDoc) return;
-    const data = state.cardsData || { chapters: [] };
     const chName = el.cardsChapter.value || 'all';
-    const chapters = chName === 'all' ? data.chapters : data.chapters.filter((c) => c.chapter === chName);
+    const chapters = cardsChapters().filter((c) => chName === 'all' || c.chapter === chName);
     const frag = document.createDocumentFragment();
     const all = document.createElement('option');
     all.value = 'all';
@@ -862,9 +930,9 @@
       });
       return;
     }
-    const chapters = data.chapters || [];
+    const chapters = cardsChapters();
     if (!chapters.length) {
-      el.cardsBody.innerHTML = '<p class="empty__hint">还没有考点卡数据。跑一下 tools/build-cards-json.mjs 再刷新。</p>';
+      el.cardsBody.innerHTML = '<p class="empty__hint">当前科目还没有考点卡。跑一下 tools/build-cards-json.mjs 再刷新。</p>';
       if (el.cardsMeta) el.cardsMeta.textContent = '';
       return;
     }
@@ -885,7 +953,7 @@
       panel.className = 'panel';
 
       const total = docs.reduce((a, d) => a + d.sections.length, 0);
-      const pKey = 'cards:' + ch.chapter;
+      const pKey = 'cards:' + (ch.subject || 'os') + '|' + ch.chapter;
       // 考点卡是「读」的视图：章默认展开（用户主动收起才记住）
       const expanded = !state.cardsCollapsed.has(pKey);
 
@@ -1017,13 +1085,14 @@
     const chFilter = el.masteryChapter ? (el.masteryChapter.value || 'all') : 'all';
     const gradeFilter = el.masteryGrade ? (el.masteryGrade.value || 'all') : 'all';
 
-    // 全书统计
-    const allIds = state.items.map((it) => it.id);
+    // 当前科目统计（不是全书：切到计网时只该看计网的掌握度）
+    const allIds = subjectItems().map((it) => it.id);
     const allStats = statsOf(allIds);
     if (el.masterySummary) {
+      const scopeName = state.subject === 'all' ? '全部科目' : subjectName(state.subject);
       el.masterySummary.innerHTML =
         `<div class="msum__head"><span class="msum__pct">${allStats.pct}%</span>` +
-        `<span class="msum__label">全书掌握度</span></div>` +
+        `<span class="msum__label">${scopeName}掌握度</span></div>` +
         `<div class="msum__bar"><i style="width:${allStats.pct}%"></i></div>` +
         `<div class="msum__nums">✅ ${allStats.known} · 🤔 ${allStats.fuzzy} · ❌ ${allStats.unknown} · ⚪ ${allStats.untested} · 共 ${allStats.total}</div>`;
     }
@@ -1039,7 +1108,7 @@
     let shownSecs = 0;
     let shownIds = 0;
 
-    for (const ch of state.tree) {
+    for (const ch of subjectTree()) {
       if (chFilter !== 'all' && ch.chapter !== chFilter) continue;
 
       const chIds = [];
@@ -1098,7 +1167,7 @@
       for (const s of secs) {
         shownSecs += 1;
         shownIds += s.hit.length;
-        const sKey = secKey(ch.chapter, s.section);
+        const sKey = secKey(ch.chapter, s.section, ch.subject);
         const sOpen = chFilter !== 'all' || state.openMasterySecs.has(sKey);
         const st = statsOf(s.ids);
 
@@ -1204,8 +1273,25 @@
   function currentFiltered() {
     const terms = splitQuery(state.query);
     const searched = searchItems(terms);
-    const byLevel = state.level === 'all' ? searched : searched.filter((r) => r.it.level === state.level);
+    const bySubject = state.subject === 'all'
+      ? searched
+      : searched.filter((r) => r.it.subject === state.subject);
+    const byLevel = state.level === 'all' ? bySubject : bySubject.filter((r) => r.it.level === state.level);
     return { terms, searched, filtered: byLevel };
+  }
+
+  /** 当前科目下的知识点（不做搜索/分级过滤），给下拉框统计条数用 */
+  function subjectItems() {
+    return state.subject === 'all'
+      ? state.items
+      : state.items.filter((it) => it.subject === state.subject);
+  }
+
+  /** 当前科目下的章（顺序沿用 state.tree） */
+  function subjectTree() {
+    return state.subject === 'all'
+      ? state.tree
+      : state.tree.filter((c) => c.subject === state.subject);
   }
 
   /** 统一入口：搜索词或标签变化时调用 */
@@ -1216,9 +1302,10 @@
     buildDeck(deckSource(), options.keepCard);
 
     const n = filtered.length;
-    const total = state.items.length;
-    el.listMeta.textContent = terms.length || state.level !== 'all'
-      ? `筛选出 ${n} 个考点（共 ${total} 个）`
+    const total = subjectItems().length;
+    const scope = state.subject === 'all' ? '' : `${subjectName(state.subject)} · `;
+    el.listMeta.textContent = terms.length || state.level !== 'all' || state.subject !== 'all'
+      ? `${scope}筛选出 ${n} 个考点（共 ${total} 个）`
       : `共 ${n} 个考点 · 点击考点查看答案，点右侧 🎴 直接抽背`;
     announce(`筛选出 ${n} 个考点`);
 
@@ -1230,8 +1317,8 @@
   }
 
   /* ---------------- 考点列表渲染 ---------------- */
-  function panelKey(chapter) { return 'c:' + chapter; }
-  function secKey(chapter, section) { return 'c:' + chapter + '|s:' + section; }
+  function panelKey(chapter, subject) { return 'c:' + (subject || 'os') + '|' + chapter; }
+  function secKey(chapter, section, subject) { return 'c:' + (subject || 'os') + '|' + chapter + '|s:' + section; }
 
   function renderList(terms, filtered) {
     const seq = ++state.seq;
@@ -1249,7 +1336,7 @@
     const autoExpand = terms.length > 0 || state.level !== 'all';
     const hitIds = new Set(filtered.map((r) => r.it.id));
 
-    for (const ch of state.tree) {
+    for (const ch of subjectTree()) {
       // 本章下命中的节
       const secs = ch.sections
         .map((s) => ({
@@ -1261,7 +1348,7 @@
       if (!secs.length) continue; // 搜索时整章无命中则不显示（结果更聚焦）
 
       const count = secs.reduce((a, s) => a + s.ids.length, 0);
-      const pKey = panelKey(ch.chapter);
+      const pKey = panelKey(ch.chapter, ch.subject);
       const expanded = autoExpand || state.openPanels.has(pKey);
 
       const panel = document.createElement('section');
@@ -1289,7 +1376,7 @@
       itemsBox.hidden = !expanded;
 
       for (const s of secs) {
-        const sKey = secKey(ch.chapter, s.section);
+        const sKey = secKey(ch.chapter, s.section, ch.subject);
         const sOpen = autoExpand || state.openSections.has(sKey);
 
         const secBox = document.createElement('div');
@@ -1334,7 +1421,7 @@
 
     // 数据里有、但目录树没覆盖到的考点，兜底显示在最后一组
     const covered = new Set();
-    state.tree.forEach((c) => c.sections.forEach((s) => s.topicIds.forEach((id) => covered.add(id))));
+    subjectTree().forEach((c) => c.sections.forEach((s) => s.topicIds.forEach((id) => covered.add(id))));
     const orphans = filtered.map((r) => r.it).filter((it) => !covered.has(it.id));
     if (orphans.length) {
       const panel = document.createElement('section');
@@ -1499,10 +1586,10 @@
     el.drawerProgress.textContent =
       `全书掌握：${known}/${total} · 模糊 ${fuzzy} · 忘了 ${unknown}`;
     // 每节掌握度
-    state.tree.forEach((ch) => ch.sections.forEach((sec) => {
+    subjectTree().forEach((ch) => ch.sections.forEach((sec) => {
       const ids = sec.topicIds.filter((id) => state.byId.has(id));
       const k = ids.filter((id) => gradeOf(id) === 'known').length;
-      const node = el.drawerBody.querySelector(`[data-sec-progress="${ch.chapter}|${sec.section}"]`);
+      const node = el.drawerBody.querySelector(`[data-sec-progress="${ch.subject || 'os'}|${ch.chapter}|${sec.section}"]`);
       if (node) node.textContent = `${k}/${ids.length}`;
     }));
   }
@@ -1626,7 +1713,7 @@
   function renderDrawer() {
     const frag = document.createDocumentFragment();
 
-    for (const ch of state.tree) {
+    for (const ch of subjectTree()) {
       const group = document.createElement('div');
       group.className = 'tree__group';
 
@@ -1664,7 +1751,7 @@
         const k = secIds.filter((id) => gradeOf(id) === 'known').length;
         secBtn.querySelector('.tree__name').insertAdjacentHTML(
           'afterend',
-          ` <span class="mastery" data-sec-progress="${escapeHtml(ch.chapter)}|${escapeHtml(sec.section)}">${k}/${secIds.length}</span>`
+          ` <span class="mastery" data-sec-progress="${escapeHtml(ch.subject || 'os')}|${escapeHtml(ch.chapter)}|${escapeHtml(sec.section)}">${k}/${secIds.length}</span>`
         );
 
         const secKids = document.createElement('div');
@@ -1729,7 +1816,7 @@
     }
     switchView('list', { silent: true });
     // 展开所在章
-    state.openPanels.add(panelKey(item.chapter));
+    state.openPanels.add(panelKey(item.chapter, item.subject));
     state.openTopics.add(item.id);
     renderList(splitQuery(state.query), currentFiltered().filtered);
 
@@ -1805,7 +1892,7 @@
     all.value = 'all';
     all.textContent = '全部章节';
     frag.appendChild(all);
-    for (const ch of state.tree) {
+    for (const ch of subjectTree()) {
       const opt = document.createElement('option');
       opt.value = ch.chapter;
       const n = ch.sections.reduce((a, s) => a + s.topicIds.length, 0);
@@ -1814,23 +1901,39 @@
     }
     el.cardChapter.replaceChildren(frag);
 
-    // 考点卡、掌握列表的章节下拉复用同一份章名
-    [el.cardsChapter, el.masteryChapter].forEach((sel) => {
-      if (!sel) return;
+    // 掌握列表的章节下拉跟知识点树走
+    if (el.masteryChapter) {
       const f2 = document.createDocumentFragment();
       const a2 = document.createElement('option');
       a2.value = 'all';
       a2.textContent = '全部章节';
       f2.appendChild(a2);
-      for (const ch of state.tree) {
+      for (const ch of subjectTree()) {
         const o = document.createElement('option');
         o.value = ch.chapter;
         const n = ch.sections.reduce((a, s) => a + s.topicIds.length, 0);
         o.textContent = `${ch.chapter}（${n}）`;
         f2.appendChild(o);
       }
-      sel.replaceChildren(f2);
-    });
+      el.masteryChapter.replaceChildren(f2);
+    }
+
+    // 考点卡的章节下拉跟 cards.json 走（没卡片的章不该出现在这里）
+    if (el.cardsChapter) {
+      const f3 = document.createDocumentFragment();
+      const a3 = document.createElement('option');
+      a3.value = 'all';
+      a3.textContent = '全部章节';
+      f3.appendChild(a3);
+      for (const ch of cardsChapters()) {
+        const o = document.createElement('option');
+        o.value = ch.chapter;
+        const n = (ch.docs || []).reduce((a, d) => a + d.sections.length, 0);
+        o.textContent = `${ch.chapter}（${n} 节）`;
+        f3.appendChild(o);
+      }
+      el.cardsChapter.replaceChildren(f3);
+    }
 
     renderSectionSelect();
     renderCardsDocSelect();
@@ -1845,13 +1948,13 @@
     all.value = 'all';
     all.textContent = '全部小节';
     frag.appendChild(all);
-    const chapters = chName === 'all' ? state.tree : state.tree.filter((c) => c.chapter === chName);
+    const chapters = chName === 'all' ? subjectTree() : subjectTree().filter((c) => c.chapter === chName);
     for (const ch of chapters) {
       for (const sec of ch.sections) {
         if (!sec.topicIds.length) continue;
         const opt = document.createElement('option');
-        opt.value = `${ch.chapter}|${sec.section}`;
-        opt.textContent = chName === 'all' ? `${sec.section}（${sec.topicIds.length}）` : `${sec.section}（${sec.topicIds.length}）`;
+        opt.value = `${ch.subject || 'os'}|${ch.chapter}|${sec.section}`;
+        opt.textContent = `${sec.section}（${sec.topicIds.length}）`;
         frag.appendChild(opt);
       }
     }
@@ -1871,8 +1974,15 @@
     let items = filtered.map((r) => r.it);
     if (ch !== 'all') items = items.filter((it) => it.chapter === ch);
     if (sec !== 'all') {
-      const [secCh, secName] = sec.split('|');
-      items = items.filter((it) => it.chapter === secCh && it.section === secName);
+      // 值格式「科目|章|节」；老格式「章|节」也兼容
+      const parts = sec.split('|');
+      if (parts.length >= 3) {
+        const [secSubj, secCh, secName] = parts;
+        items = items.filter((it) => it.subject === secSubj && it.chapter === secCh && it.section === secName);
+      } else {
+        const [secCh, secName] = parts;
+        items = items.filter((it) => it.chapter === secCh && it.section === secName);
+      }
     }
     return items;
   }
@@ -2068,6 +2178,65 @@
     });
   }
 
+  /* ---------------- 科目 chips ---------------- */
+  /** 按数据里真实出现的科目重建 chips（只有 os 时不显示「全部科目」，省一行空间） */
+  function renderSubjectChips() {
+    if (!el.subjectChips) return;
+    const subs = activeSubjects();
+    if (subs.length <= 1) {
+      el.subjectChips.hidden = true;
+      state.subject = 'all';
+      return;
+    }
+    el.subjectChips.hidden = false;
+    const frag = document.createDocumentFragment();
+    const all = document.createElement('button');
+    all.type = 'button';
+    all.className = 'chip chip--subject';
+    all.dataset.subject = 'all';
+    all.textContent = '全部科目';
+    frag.appendChild(all);
+    subs.forEach((s) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip chip--subject';
+      b.dataset.subject = s.id;
+      const n = state.items.filter((it) => it.subject === s.id).length;
+      b.textContent = `${s.icon} ${s.name}（${n}）`;
+      frag.appendChild(b);
+    });
+    el.subjectChips.replaceChildren(frag);
+    syncSubjectChips();
+  }
+
+  function syncSubjectChips() {
+    if (!el.subjectChips) return;
+    el.subjectChips.querySelectorAll('.chip').forEach((c) => {
+      const on = c.dataset.subject === state.subject;
+      c.classList.toggle('is-active', on);
+      c.setAttribute('aria-pressed', String(on));
+    });
+  }
+
+  /** 切科目后所有依赖章名/节名的下拉和视图都要重建 */
+  function onSubjectChanged() {
+    // 记住每个下拉「切之前选的是什么」没有意义：章名跨科目不通用，一律回到全部
+    if (el.cardChapter) el.cardChapter.value = 'all';
+    if (el.cardsChapter) el.cardsChapter.value = 'all';
+    if (el.masteryChapter) el.masteryChapter.value = 'all';
+    if (el.cardSection) el.cardSection.value = 'all';
+    state.cardsDoc = 'all';
+    renderChapterSelect();
+    renderCardsDocSelect();
+    syncSubjectChips();
+    renderBrandSub();
+    applyFilters({ keepCard: true });
+    renderMastery();
+    renderDrawer();
+    renderDrawerProgress();
+    if (state.view === 'cards') renderCards();
+  }
+
   /* ---------------- 顶部栏高度测量（锚点偏移用） ---------------- */
   function measureTopbar() {
     const h = el.topbar.getBoundingClientRect().height;
@@ -2168,6 +2337,18 @@
       el.search.focus();
     });
 
+    // 科目筛选
+    if (el.subjectChips) {
+      el.subjectChips.addEventListener('click', (e) => {
+        const btn = e.target.closest('.chip');
+        if (!btn) return;
+        const next = btn.dataset.subject || 'all';
+        if (next === state.subject) return;
+        state.subject = next;
+        onSubjectChanged();
+      });
+    }
+
     // 分级筛选
     el.levelChips.addEventListener('click', (e) => {
       const btn = e.target.closest('.chip');
@@ -2227,7 +2408,9 @@
     }
     if (el.forgetAll) {
       el.forgetAll.addEventListener('click', () => {
-        forgetIds(state.items.map((it) => it.id), '全书');
+        // 只遗忘当前科目（切到计网时不该把操作系统的记录也清掉）
+        const label = state.subject === 'all' ? '全部科目' : subjectName(state.subject);
+        forgetIds(subjectItems().map((it) => it.id), label);
       });
     }
 
@@ -2497,6 +2680,7 @@
     bindEvents();
     bindKeyboardSafeSearch();
     syncLevelChips();
+    renderSubjectChips();
     registerSW();
     boot();
   }
