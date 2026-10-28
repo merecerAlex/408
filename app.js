@@ -399,6 +399,10 @@
     // —— 计算机网络（subject: net）——
     'data/_parts/net_ch1.json',
     'data/_parts/net_ch2.json',
+    'data/_parts/net_ch3.json',
+    'data/_parts/net_ch4.json',
+    'data/_parts/net_ch5.json',
+    'data/_parts/net_ch6.json',
   ];
 
   async function loadPartIndex() {
