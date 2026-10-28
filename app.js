@@ -778,6 +778,7 @@
     // 考点卡数据（可选）：失败不影响主流程，只是「考点卡」页空着
     try {
       await loadCardsData();
+      renderCardsChapterSelect();
       renderCardsDocSelect();
     } catch (e) { /* 忽略 */ }
     renderDrawer();
@@ -897,6 +898,28 @@
     const data = state.cardsData || { chapters: [] };
     const all = data.chapters || [];
     return state.subject === 'all' ? all : all.filter((c) => (c.subject || 'os') === state.subject);
+  }
+
+  /** 考点卡的章节下拉：跟 cards.json 走（没卡片的章不该出现在这里） */
+  function renderCardsChapterSelect() {
+    if (!el.cardsChapter) return;
+    const frag = document.createDocumentFragment();
+    const all = document.createElement('option');
+    all.value = 'all';
+    all.textContent = '全部章节';
+    frag.appendChild(all);
+    for (const ch of cardsChapters()) {
+      const o = document.createElement('option');
+      o.value = ch.chapter;
+      const n = (ch.docs || []).reduce((a, d) => a + d.sections.length, 0);
+      o.textContent = `${ch.chapter}（${n} 节）`;
+      frag.appendChild(o);
+    }
+    el.cardsChapter.replaceChildren(frag);
+    const keep = state.cardsChapter;
+    const exists = [...el.cardsChapter.options].some((o) => o.value === keep);
+    el.cardsChapter.value = exists ? keep : 'all';
+    state.cardsChapter = el.cardsChapter.value;
   }
 
   function renderCardsDocSelect() {
@@ -1923,21 +1946,7 @@
     }
 
     // 考点卡的章节下拉跟 cards.json 走（没卡片的章不该出现在这里）
-    if (el.cardsChapter) {
-      const f3 = document.createDocumentFragment();
-      const a3 = document.createElement('option');
-      a3.value = 'all';
-      a3.textContent = '全部章节';
-      f3.appendChild(a3);
-      for (const ch of cardsChapters()) {
-        const o = document.createElement('option');
-        o.value = ch.chapter;
-        const n = (ch.docs || []).reduce((a, d) => a + d.sections.length, 0);
-        o.textContent = `${ch.chapter}（${n} 节）`;
-        f3.appendChild(o);
-      }
-      el.cardsChapter.replaceChildren(f3);
-    }
+    renderCardsChapterSelect();
 
     renderSectionSelect();
     renderCardsDocSelect();
