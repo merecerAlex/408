@@ -403,6 +403,14 @@
     'data/_parts/net_ch4.json',
     'data/_parts/net_ch5.json',
     'data/_parts/net_ch6.json',
+    // —— 计算机组成原理（subject: co）——
+    'data/_parts/co_ch1.json',
+    'data/_parts/co_ch2.json',
+    'data/_parts/co_ch3.json',
+    'data/_parts/co_ch4.json',
+    'data/_parts/co_ch5.json',
+    'data/_parts/co_ch6.json',
+    'data/_parts/co_ch7.json',
   ];
 
   async function loadPartIndex() {
@@ -460,12 +468,14 @@
   const SUBJECTS = [
     { id: 'os', name: '操作系统', icon: '🖥️' },
     { id: 'net', name: '计算机网络', icon: '🌐' },
+    { id: 'co', name: '计算机组成原理', icon: '🧮' },
   ];
   const SUBJECT_MAP = new Map(SUBJECTS.map((s) => [s.id, s]));
 
   function subjectOfId(id) {
     const s = normalize(id);
     if (/^net-/i.test(s)) return 'net';
+    if (/^co-/i.test(s)) return 'co';
     if (/^os-/i.test(s)) return 'os';
     return 'os';
   }
@@ -573,27 +583,43 @@
       if (!ch || !ch.chapter) return;
       const name = normalize(ch.chapter).trim();
       if (!name) return;
-      idx.set(name, ch);
+      // 科目前缀：操作系统与计组都有「第1章 计算机系统概述」，只按章名做键会串科
+      const subj = normalize(ch.subject) || 'os';
+      idx.set(subj + '|' + name, ch);
+      if (subj === 'os') idx.set(name, ch);   // 兼容旧数据（没有 subject 字段）
       (ch.sections || []).forEach((sec) => {
         if (!sec || !sec.section) return;
-        idx.set(name + '|' + normalize(sec.section).trim(), sec);
+        const key = name + '|' + normalize(sec.section).trim();
+        idx.set(subj + '|' + key, sec);
+        if (subj === 'os') idx.set(key, sec);
       });
     });
     return idx;
   }
 
   /** 取某章 / 某节的考向信息：节级优先，没有则回落章级 */
-  function trendOf(chapter, section) {
+  function trendOf(chapter, section, subject) {
     const idx = state.trendIndex;
     if (!idx || !idx.size) return null;
     const chName = normalize(chapter).trim();
     const secName = normalize(section).trim();
+    const subj = normalize(subject) || 'os';
     if (secName) {
-      const sec = idx.get(chName + '|' + secName);
+      const sec = idx.get(subj + '|' + chName + '|' + secName);
       if (sec && (sec.weight || sec.scoreRange)) return sec;
     }
-    const ch = idx.get(chName);
-    return ch && (ch.weight || ch.scoreRange) ? ch : null;
+    const ch = idx.get(subj + '|' + chName);
+    if (ch && (ch.weight || ch.scoreRange)) return ch;
+    // 旧数据兜底（只有操作系统那一份 exam_trend 没有 subject 字段时也能命中）
+    if (subj === 'os') {
+      if (secName) {
+        const sec = idx.get(chName + '|' + secName);
+        if (sec && (sec.weight || sec.scoreRange)) return sec;
+      }
+      const legacy = idx.get(chName);
+      return legacy && (legacy.weight || legacy.scoreRange) ? legacy : null;
+    }
+    return null;
   }
 
   /** 频率 → 视觉档位（只用于上色，不改文案） */
@@ -628,9 +654,9 @@
    * title：把 years / focus / 依据一并给出，并明确"区间估计"。
    */
   function trendBadge(chapter, section, opts) {
-    const t = trendOf(chapter, section);
-    if (!t) return '';
     const options = opts || {};
+    const t = trendOf(chapter, section, options.subject);
+    if (!t) return '';
     const weight = normalize(t.weight).trim();
     const score = normalize(t.scoreRange).trim();
     const tone = trendTone(weight);
@@ -1388,7 +1414,7 @@
       toggle.innerHTML =
         `<span class="panel__caret" aria-hidden="true">▶</span>` +
         `<span class="panel__name"></span>` +
-        trendBadge(ch.chapter) +
+        trendBadge(ch.chapter, '', { subject: ch.subject }) +
         `<span class="panel__count">${count}</span>`;
       toggle.querySelector('.panel__name').innerHTML = highlight(ch.chapter, terms);
       toggle.addEventListener('click', () => {
@@ -1549,6 +1575,8 @@
   /** 卡片翻转后才允许自评：答案都没看，谈不上会了/忘了 */
   function syncRateButtons() {
     const item = currentCard();
+    // 三档自评按钮初始带 hidden，必须在有卡时才显示出来，否则抽卡页永远看不到「会了/模糊/忘了」
+    if (el.drillRate) el.drillRate.hidden = !item;
     const graded = item && state.round.grades.has(item.id);
     const enabled = !!item && state.flipped && !graded;
     [...el.drillRate.querySelectorAll('button')].forEach((b) => { b.disabled = !enabled; });
@@ -1773,7 +1801,7 @@
           `<span class="tree__name"></span>`;
         secBtn.querySelector('.tree__name').textContent = sec.section;
         // 节级考向徽章（只有 exam_trend.json 里有这一节时才显示）
-        secBtn.insertAdjacentHTML('beforeend', trendBadge(ch.chapter, sec.section, { compact: true }));
+        secBtn.insertAdjacentHTML('beforeend', trendBadge(ch.chapter, sec.section, { compact: true, subject: ch.subject }));
         const secIds = sec.topicIds.filter((id) => state.byId.has(id));
         const k = secIds.filter((id) => gradeOf(id) === 'known').length;
         secBtn.querySelector('.tree__name').insertAdjacentHTML(
@@ -2047,7 +2075,7 @@
     el.cardBadgesFront.innerHTML =
       levelBadge(item.level) +
       `<span class="flipcard__badge">${escapeHtml(item.chapter)}</span>` +
-      trendBadge(item.chapter, item.section, { compact: true }) +
+      trendBadge(item.chapter, item.section, { compact: true, subject: item.subject }) +
       (item.status === 'draft' ? `<span class="flipcard__badge flipcard__badge--draft">草稿</span>` : '');
     el.cardKwFront.replaceChildren();
     item.keywords.slice(0, 8).forEach((k) => {
@@ -2063,7 +2091,7 @@
     el.cardBadgesBack.innerHTML =
       levelBadge(item.level) +
       `<span class="flipcard__badge">${escapeHtml(item.section)}</span>` +
-      trendBadge(item.chapter, item.section, { compact: true });
+      trendBadge(item.chapter, item.section, { compact: true, subject: item.subject });
 
     // 卡片翻转状态在有卡变化时回到正面
     setFlipped(false);

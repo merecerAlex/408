@@ -1,8 +1,8 @@
 {
   "$schema": "408-os-node / 章节考向与分值 v1",
   "version": "0.1.0",
-  "updated": "2026-10-20",
-  "note": "考向与分值均为区间估计，供复习取舍参考，不是官方分值。confidence 三档说明：based_on_exam=该节在本地真题文本中可逐题核对到年份题号；based_on_textbook=依据王道各节考纲追踪与 408 分值传统；estimate=经验估计。本地真题仅 2020/2021/2022/2024 四年有文字层，2009–2019、2023、2025 缺失，故“出现次数”类 years 字段一律为区间/定性表述，未做全量统计。",
+  "updated": "2026-10-31",
+  "note": "考向与分值均为区间估计，供复习取舍参考，不是官方分值。confidence 三档说明：based_on_exam=该节在本地真题文本中可逐题核对到年份题号；based_on_textbook=依据王道各节考纲追踪与 408 分值传统；estimate=经验估计。本地真题仅 2020/2021/2022/2024 四年有文字层，2009–2019、2023、2025 缺失，故“出现次数”类 years 字段一律为区间/定性表述，未做全量统计。计算机组成原理各章全部为 based_on_textbook / estimate，未逐题核对真题。",
   "chapters": [
     {
       "chapter": "第1章 计算机系统概述",
@@ -108,7 +108,8 @@
           "typical": "常见考法：以易错选择项形式穿插在 1.3 的题目里",
           "confidence": "based_on_textbook"
         }
-      ]
+      ],
+      "subject": "os"
     },
     {
       "chapter": "第2章 进程与线程",
@@ -213,7 +214,8 @@
           "typical": "常见考法：把“这段代码是否为临界区、为什么”作为大题的第一问",
           "confidence": "based_on_textbook"
         }
-      ]
+      ],
+      "subject": "os"
     },
     {
       "chapter": "第3章 内存管理",
@@ -278,7 +280,8 @@
           "typical": "常见考法：问“若 TLB 命中/未命中分别为多少时钟周期，求平均访存时间”",
           "confidence": "based_on_textbook"
         }
-      ]
+      ],
+      "subject": "os"
     },
     {
       "chapter": "第4章 文件管理",
@@ -356,7 +359,8 @@
           "typical": "常见考法：作为综合题最后一问，问“至少要访问几个磁盘块/几次磁盘”",
           "confidence": "based_on_textbook"
         }
-      ]
+      ],
+      "subject": "os"
     },
     {
       "chapter": "第5章 输入/输出管理",
@@ -435,7 +439,579 @@
           "typical": "常见考法：问“若采用缓冲，某进程的阻塞时间/CPU 时间如何变化”",
           "confidence": "based_on_textbook"
         }
-      ]
+      ],
+      "subject": "os"
+    },
+    {
+      "chapter": "第1章 计算机系统概述",
+      "weight": "低频",
+      "scoreRange": "选择题 2 分 × 0~2（约 0~4 分）；通常不单独出综合题",
+      "years": "常以 1 道选择题出现，考性能指标计算或层次结构辨析",
+      "focus": [
+        "冯·诺依曼结构与存储程序",
+        "计算机系统层次结构、软硬件界面",
+        "CPU 性能指标：CPI、主频、MIPS、CPU 执行时间",
+        "存储字长、机器字长、指令字长的区别"
+      ],
+      "confidence": "based_on_textbook",
+      "sections": [
+        {
+          "section": "1.1 计算机发展历程",
+          "weight": "低频",
+          "scoreRange": "选择题 2 分 × 0~1",
+          "years": "偶考，多为电子管/晶体管时代的标志性事件",
+          "focus": [
+            "四代计算机的逻辑元件",
+            "摩尔定律"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "1.2 计算机系统层次结构",
+          "weight": "中频",
+          "scoreRange": "选择题 2 分 × 1~2",
+          "years": "层次结构、编译/解释、存储程序是常客",
+          "focus": [
+            "冯·诺依曼机的五大部件",
+            "存储程序的工作方式",
+            "编译程序、解释程序、汇编程序的区别",
+            "机器字长、指令字长、存储字长",
+            "计算机系统层次结构"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "1.3 计算机的性能指标",
+          "weight": "中频",
+          "scoreRange": "选择题 2 分 × 1~2（偶尔小计算）",
+          "years": "CPI/主频/MIPS/执行时间几乎年年有",
+          "focus": [
+            "CPU 时钟周期与主频",
+            "CPI 与 CPU 执行时间",
+            "MIPS、MFLOPS 的计算",
+            "吞吐量与响应时间",
+            "基准程序与性能评价的局限"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "1.4 本章小结与易混淆",
+          "weight": "低频",
+          "scoreRange": "不单独计分",
+          "years": "作为易错点融进上述题目",
+          "focus": [
+            "主频高不等于性能高",
+            "字长类概念的区分"
+          ],
+          "confidence": "estimate"
+        }
+      ],
+      "subject": "co"
+    },
+    {
+      "chapter": "第2章 数据的表示和运算",
+      "weight": "高频",
+      "scoreRange": "选择题 2 分 × 4~6 + 综合题 8~12 分（合计约 16~24 分）",
+      "years": "乘除法运算、浮点数表示与加减、溢出判断是综合题常客",
+      "focus": [
+        "原码/反码/补码/移码与表示范围",
+        "补码加减与溢出判断",
+        "IEEE 754 浮点格式与加减运算",
+        "乘除法运算流程与阵列乘法器",
+        "ALU 与标志位",
+        "C 语言数据的机器级表示与大小端"
+      ],
+      "confidence": "based_on_textbook",
+      "sections": [
+        {
+          "section": "2.1 数制与编码",
+          "weight": "高频",
+          "scoreRange": "选择题 2 分 × 2~3",
+          "years": "四种机器数、表示范围、BCD/校验码常考",
+          "focus": [
+            "原码/反码/补码/移码的转换与范围",
+            "补码与真值互转",
+            "无符号数与有符号数的区别",
+            "BCD 码、ASCII、汉字编码",
+            "奇偶校验与海明码（若考纲含）"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "2.2 运算方法和运算电路",
+          "weight": "高频",
+          "scoreRange": "选择题 2 分 × 2~3 + 偶尔综合题 7~10 分",
+          "years": "补码加减、溢出、乘法器、除法器、ALU 是综合题来源",
+          "focus": [
+            "补码加减运算与溢出判断",
+            "移位运算（算术/逻辑）",
+            "原码一位乘法与补码一位乘法（Booth）",
+            "除法运算流程",
+            "ALU 的功能与标志位",
+            "加法器的进位链与并行进位"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "2.3 浮点数的表示与运算",
+          "weight": "高频",
+          "scoreRange": "选择题 2 分 × 2~3 + 综合题 8~12 分",
+          "years": "IEEE 754 格式、浮点加减步骤、溢出与舍入是重点",
+          "focus": [
+            "浮点数的格式（阶码、尾数、基数）",
+            "IEEE 754 单/双精度的字段与真值",
+            "规格化、溢出判断",
+            "浮点加减五步：对阶、尾数运算、规格化、舍入、溢出判断",
+            "舍入方式",
+            "浮点数与定点数的范围与精度对比"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "2.4 本章小结与易混淆",
+          "weight": "低频",
+          "scoreRange": "不单独计分",
+          "years": "作为易错点融进上述题目",
+          "focus": [
+            "补码范围与零的唯一性",
+            "溢出与进位的区别"
+          ],
+          "confidence": "estimate"
+        }
+      ],
+      "subject": "co"
+    },
+    {
+      "chapter": "第3章 存储系统",
+      "weight": "高频",
+      "scoreRange": "选择题 2 分 × 4~6 + 综合题 10~15 分（合计约 18~27 分）",
+      "years": "Cache 映射与命中率、主存扩展、虚拟存储是综合题高发区",
+      "focus": [
+        "存储器层次结构与性能指标",
+        "SRAM/DRAM/ROM 与刷新",
+        "主存容量扩展与地址分配",
+        "Cache 三种映射、替换与写策略、命中率计算",
+        "虚拟存储器与 TLB、页表",
+        "磁盘容量、寻道时间与 RAID"
+      ],
+      "confidence": "based_on_textbook",
+      "sections": [
+        {
+          "section": "3.1 存储器概述",
+          "weight": "中频",
+          "scoreRange": "选择题 2 分 × 1~2",
+          "years": "层次结构、存取周期、带宽常考",
+          "focus": [
+            "存储器层次结构",
+            "存取时间、存取周期、存储带宽",
+            "存储器的分类",
+            "局部性原理"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "3.2 主存储器",
+          "weight": "高频",
+          "scoreRange": "选择题 2 分 × 2~3 + 偶尔小计算",
+          "years": "DRAM 刷新、芯片容量与地址线是常客",
+          "focus": [
+            "DRAM 与 SRAM 的对比",
+            "DRAM 三种刷新方式与刷新周期计算",
+            "ROM 的类型",
+            "存储芯片的容量与地址线、数据线位数",
+            "多模块存储器（交叉编址）"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "3.3 主存储器与CPU的连接",
+          "weight": "高频",
+          "scoreRange": "选择题 2 分 × 1~2 + 综合题 8~12 分",
+          "years": "芯片扩展与片选译码几乎必考",
+          "focus": [
+            "位扩展、字扩展、字位同时扩展",
+            "片选逻辑与译码器",
+            "地址范围与地址线分配",
+            "存储芯片与 CPU 的连线"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "3.4 外部存储器",
+          "weight": "中频",
+          "scoreRange": "选择题 2 分 × 1~2",
+          "years": "磁盘容量与存取时间计算常考",
+          "focus": [
+            "磁盘的结构与地址格式",
+            "磁盘容量计算",
+            "寻道时间、旋转延迟、传输时间",
+            "SSD 与闪存",
+            "RAID 0/1/5 的特点"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "3.5 高速缓冲存储器",
+          "weight": "高频",
+          "scoreRange": "选择题 2 分 × 2~3 + 综合题 10~15 分",
+          "years": "映射方式与地址划分、命中率与平均访问时间几乎年年出",
+          "focus": [
+            "Cache 的工作原理与局部性",
+            "直接映射、全相联、组相联的地址划分",
+            "标记比较与替换算法（LRU/FIFO/随机）",
+            "写直达与写回、写分配与非写分配",
+            "命中率与平均访问时间计算",
+            "多级 Cache"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "3.6 虚拟存储器",
+          "weight": "高频",
+          "scoreRange": "选择题 2 分 × 1~3 + 偶尔综合题 7~10 分",
+          "years": "页表、TLB、虚实地址转换常考",
+          "focus": [
+            "虚拟存储器的概念与三种实现",
+            "页式虚拟存储器与页表",
+            "TLB 的作用与访问流程",
+            "虚实地址转换过程",
+            "缺页处理",
+            "Cache 与虚拟存储器的对比"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "3.7 本章小结与易混淆",
+          "weight": "低频",
+          "scoreRange": "不单独计分",
+          "years": "作为易错点融进上述题目",
+          "focus": [
+            "Cache 与虚拟存储的异同",
+            "存取时间与存取周期的区别"
+          ],
+          "confidence": "estimate"
+        }
+      ],
+      "subject": "co"
+    },
+    {
+      "chapter": "第4章 指令系统",
+      "weight": "中频",
+      "scoreRange": "选择题 2 分 × 3~4 + 偶尔综合题 7~10 分（合计约 6~18 分）",
+      "years": "寻址方式、指令格式、CISC/RISC 对比常考；机器级代码表示近年加重",
+      "focus": [
+        "指令格式与扩展操作码",
+        "七种寻址方式与有效地址计算",
+        "C 语言语句的机器级表示",
+        "过程调用的栈帧与参数传递",
+        "CISC 与 RISC 的对比"
+      ],
+      "confidence": "based_on_textbook",
+      "sections": [
+        {
+          "section": "4.1 指令系统",
+          "weight": "中频",
+          "scoreRange": "选择题 2 分 × 1~2",
+          "years": "指令格式、扩展操作码是常客",
+          "focus": [
+            "指令的基本格式",
+            "定长操作码与扩展操作码",
+            "指令字长与机器字长",
+            "指令集的发展"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "4.2 寻址方式",
+          "weight": "高频",
+          "scoreRange": "选择题 2 分 × 2~3 + 偶尔小计算",
+          "years": "有效地址计算、寻址方式识别必考",
+          "focus": [
+            "立即、直接、间接、寄存器、寄存器间接、相对、基址、变址寻址",
+            "有效地址 EA 的计算",
+            "寻址方式与访存次数的对应",
+            "堆栈寻址"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "4.3 程序的机器级代码表示",
+          "weight": "中频",
+          "scoreRange": "选择题 2 分 × 1~2 + 偶尔综合题 7~10 分",
+          "years": "近年加重，汇编语句与高级语言对应、过程调用栈帧",
+          "focus": [
+            "常用汇编指令（mov/add/cmp/jmp/call/ret/push/pop）",
+            "选择语句与循环语句的机器级表示",
+            "过程调用的栈帧结构",
+            "参数传递与返回值",
+            "数组与结构体的地址计算"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "4.4 CISC和RISC的基本概念",
+          "weight": "中频",
+          "scoreRange": "选择题 2 分 × 1",
+          "years": "两者对比几乎每年一道",
+          "focus": [
+            "CISC 与 RISC 的设计思路",
+            "指令数量、长度、寻址方式、寄存器数量的差异",
+            "流水线的适配性"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "4.5 本章小结与易混淆",
+          "weight": "低频",
+          "scoreRange": "不单独计分",
+          "years": "作为易错点融进上述题目",
+          "focus": [
+            "寻址方式与访存次数的混淆"
+          ],
+          "confidence": "estimate"
+        }
+      ],
+      "subject": "co"
+    },
+    {
+      "chapter": "第5章 中央处理器",
+      "weight": "高频",
+      "scoreRange": "选择题 2 分 × 4~5 + 综合题 10~15 分（合计约 18~25 分）",
+      "years": "数据通路与控制器、指令流水线是综合题最重的两处",
+      "focus": [
+        "CPU 的功能与寄存器",
+        "指令执行过程与微操作",
+        "数据通路的数据流动与微命令",
+        "硬布线控制器与微程序控制器",
+        "异常与中断",
+        "指令流水线的冒险与性能计算",
+        "多处理器与多核"
+      ],
+      "confidence": "based_on_textbook",
+      "sections": [
+        {
+          "section": "5.1 CPU的功能和基本结构",
+          "weight": "中频",
+          "scoreRange": "选择题 2 分 × 1~2",
+          "years": "寄存器功能与 CPU 结构常考",
+          "focus": [
+            "CPU 的五大功能",
+            "用户可见寄存器与不可见寄存器",
+            "PC、IR、MAR、MDR、ACC、PSW 的作用"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "5.2 指令执行过程",
+          "weight": "中频",
+          "scoreRange": "选择题 2 分 × 1~2",
+          "years": "取指/间址/执行/中断周期的微操作",
+          "focus": [
+            "指令周期的四个阶段",
+            "取指周期的微操作序列",
+            "间址周期与执行周期",
+            "中断周期",
+            "指令执行方案（单周期/多周期/流水线）"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "5.3 数据通路的功能和基本结构",
+          "weight": "高频",
+          "scoreRange": "选择题 2 分 × 1~2 + 综合题 10~15 分",
+          "years": "单总线/多总线数据通路的数据流动与微命令是综合题主力",
+          "focus": [
+            "数据通路的概念与组成",
+            "单总线结构的数据通路与微操作",
+            "多总线结构",
+            "专用数据通路",
+            "微命令与微操作的对应"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "5.4 控制器的功能和工作原理",
+          "weight": "高频",
+          "scoreRange": "选择题 2 分 × 2~3 + 偶尔综合题 7~10 分",
+          "years": "硬布线与微程序对比、微指令编码常考",
+          "focus": [
+            "控制器的功能与输入输出",
+            "硬布线控制器的设计",
+            "微程序控制器的组成与工作过程",
+            "微指令的编码方式（直接/字段直接/字段间接）",
+            "微指令格式（水平型/垂直型）",
+            "微程序控制与硬布线控制的对比"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "5.5 异常和中断机制",
+          "weight": "中频",
+          "scoreRange": "选择题 2 分 × 1~2",
+          "years": "异常与中断的分类、处理流程常考",
+          "focus": [
+            "异常与中断的区别",
+            "异常的分类（故障/自陷/终止）",
+            "中断的分类（可屏蔽/不可屏蔽）",
+            "中断处理流程与中断向量"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "5.6 指令流水线",
+          "weight": "高频",
+          "scoreRange": "选择题 2 分 × 2~3 + 综合题 8~12 分",
+          "years": "流水线性能计算、三类冒险与解决方法是必考",
+          "focus": [
+            "流水线的基本概念与时空图",
+            "流水线性能：吞吐率、加速比、效率",
+            "结构冒险、数据冒险、控制冒险",
+            "数据旁路与流水线停顿",
+            "超标量与动态流水线"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "5.7 多处理器的基本概念",
+          "weight": "低频",
+          "scoreRange": "选择题 2 分 × 0~1",
+          "years": "SISD/SIMD/MIMD、多核与共享内存",
+          "focus": [
+            "Flynn 分类",
+            "多核处理器与共享 Cache",
+            "硬件多线程"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "5.8 本章小结与易混淆",
+          "weight": "低频",
+          "scoreRange": "不单独计分",
+          "years": "作为易错点融进上述题目",
+          "focus": [
+            "异常与中断的区分",
+            "流水线冒险的三种解法对应"
+          ],
+          "confidence": "estimate"
+        }
+      ],
+      "subject": "co"
+    },
+    {
+      "chapter": "第6章 总线",
+      "weight": "低频",
+      "scoreRange": "选择题 2 分 × 1~2（约 2~4 分）；很少出综合题",
+      "years": "总线带宽计算、定时方式辨析是常见考法",
+      "focus": [
+        "总线的分类与性能指标",
+        "总线带宽计算",
+        "同步定时与异步定时",
+        "总线仲裁"
+      ],
+      "confidence": "based_on_textbook",
+      "sections": [
+        {
+          "section": "6.1 总线概述",
+          "weight": "低频",
+          "scoreRange": "选择题 2 分 × 1",
+          "years": "总线带宽、分类常考",
+          "focus": [
+            "总线的分类（片内/系统/通信）",
+            "总线带宽的计算",
+            "总线的结构与仲裁"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "6.2 总线事务和定时",
+          "weight": "低频",
+          "scoreRange": "选择题 2 分 × 0~1",
+          "years": "同步与异步定时的区别",
+          "focus": [
+            "总线事务与总线周期",
+            "同步定时方式",
+            "异步定时方式（不互锁/半互锁/全互锁）",
+            "半同步与分离事务"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "6.3 本章小结与易混淆",
+          "weight": "低频",
+          "scoreRange": "不单独计分",
+          "years": "作为易错点融进上述题目",
+          "focus": [
+            "带宽与频率的关系"
+          ],
+          "confidence": "estimate"
+        }
+      ],
+      "subject": "co"
+    },
+    {
+      "chapter": "第7章 输入/输出系统",
+      "weight": "中频",
+      "scoreRange": "选择题 2 分 × 2~3 + 偶尔综合题 7~10 分（合计约 4~16 分）",
+      "years": "中断方式与 DMA 方式的对比、DMA 传送过程是常客",
+      "focus": [
+        "I/O 接口的结构与编址",
+        "程序查询、程序中断、DMA 三种 I/O 方式",
+        "中断响应与中断处理",
+        "DMA 的三种传送方式与总线占用"
+      ],
+      "confidence": "based_on_textbook",
+      "sections": [
+        {
+          "section": "7.1 I/O系统基本概念",
+          "weight": "低频",
+          "scoreRange": "选择题 2 分 × 0~1",
+          "years": "I/O 系统的组成与编址方式",
+          "focus": [
+            "I/O 系统的组成",
+            "I/O 接口的功能",
+            "统一编址与独立编址"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "7.2 I/O接口",
+          "weight": "中频",
+          "scoreRange": "选择题 2 分 × 1",
+          "years": "接口的寄存器与工作流程",
+          "focus": [
+            "I/O 接口的结构",
+            "数据寄存器、状态寄存器、控制寄存器",
+            "I/O 端口与编址"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "7.3 I/O方式",
+          "weight": "高频",
+          "scoreRange": "选择题 2 分 × 2~3 + 偶尔综合题 7~10 分",
+          "years": "三种 I/O 方式的对比与 DMA 过程是必考",
+          "focus": [
+            "程序查询方式",
+            "程序中断方式与中断处理流程",
+            "DMA 方式与 DMA 控制器的组成",
+            "DMA 的三种传送方式（停止 CPU/周期挪用/交替访问）",
+            "三种 I/O 方式的对比",
+            "中断与 DMA 的优先级与响应时机"
+          ],
+          "confidence": "based_on_textbook"
+        },
+        {
+          "section": "7.4 本章小结与易混淆",
+          "weight": "低频",
+          "scoreRange": "不单独计分",
+          "years": "作为易错点融进上述题目",
+          "focus": [
+            "中断方式与 DMA 方式的适用场景"
+          ],
+          "confidence": "estimate"
+        }
+      ],
+      "subject": "co"
     }
   ]
 }
